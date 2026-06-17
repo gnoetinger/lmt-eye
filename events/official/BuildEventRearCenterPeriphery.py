@@ -44,10 +44,10 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None , animalTy
     for animal in range( 1 , 5 ):
         
         eventName1 = "Rear in centerWindow"        
-        print ( eventName1 )
+        logging.debug( eventName1 )
         
         eventName2 = "Rear at periphery"
-        print ( eventName2 )                    
+        logging.debug( eventName2 )                    
         
         rearCenterTimeLine = EventTimeLine( None, eventName1 , animal , None , None , None , loadEvent=False )
         rearPeripheryTimeLine = EventTimeLine( None, eventName2 , animal , None , None , None , loadEvent=False )
@@ -78,6 +78,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None , animalTy
     t.addLog( "Build Event Rear in centerWindow" , tmin=tmin, tmax=tmax )
     t.addLog( "Build Event Rear at periphery" , tmin=tmin, tmax=tmax ) 
                     
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

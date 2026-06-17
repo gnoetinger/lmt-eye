@@ -16,6 +16,7 @@ CREATE TABLE "LOG" (
 test in: 2478 USV event
 
 '''
+import logging
 from datetime import date, datetime
 from tabulate import tabulate
 
@@ -49,7 +50,7 @@ class TaskLogger:
             cursor.close()
         except:
             #create table
-            print("Log table does not exists, creating Log table")
+            logging.warning("Log table does not exists, creating Log table")
             cursor = self.conn.cursor()
             query = "CREATE TABLE LOG ( id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, process TEXT, version TEXT,date TEXT,tmin INTEGER, tmax INTEGER)"
             cursor.execute( query )
@@ -58,13 +59,13 @@ class TaskLogger:
     
     def loadLog(self):
 
-        #print ( self.__str__(), ": Loading log" )
+        #logging.debug ( f"{self.__str__()} : Loading log" )
 
         self.logList.clear()
         cursor = self.conn.cursor()
         query = "SELECT ID, PROCESS, VERSION, DATE, TMIN, TMAX FROM LOG"
             
-        #print( query )
+        #logging.debug( query )
         cursor.execute( query )
         
         rows = cursor.fetchall()
@@ -82,7 +83,7 @@ class TaskLogger:
             
             self.logList.append( log )
         
-        #print ( self.__str__(), " ", " {} log line loaded: " )
+        #logging.debug ( f"{self.__str__()} : {len(self.logList)} log line loaded" )
 
     def listLog(self):
         
@@ -93,7 +94,7 @@ class TaskLogger:
     
             data.append( [ l.id, l.process, l.version, l.date , l.tmin, l.tmax ])
     
-        print ( tabulate( data, header, tablefmt='orgtbl') )
+        logging.info( tabulate( data, header, tablefmt='orgtbl') )
 
     def addLog(self, process, version='0', date=None, tmin=0, tmax=-1 ):
 
@@ -104,7 +105,7 @@ class TaskLogger:
         cursor = self.conn.cursor()
         query = "INSERT INTO LOG( process,version,date,tmin,tmax) VALUES ( '{process}','{version}','{date}','{tmin}','{tmax}' );".format( process=process, version=version, date=date, tmin=tmin, tmax=tmax )
                     
-        print( query )
+        logging.debug( query )
         cursor.execute( query )
         self.conn.commit()
         cursor.close()    

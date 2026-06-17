@@ -2,7 +2,7 @@
 @author: xmousset
 """
 
-import re
+import logging
 from typing import Any, List
 
 import numpy as np
@@ -89,7 +89,7 @@ def draw_nights(
             x_values.extend(trace.x)
 
     if not x_values:
-        print("[WARN] draw_nights: No x values found in figure")
+        logging.warning("draw_nights: No x values found in figure")
         return fig
 
     # Convert to pandas Timestamps if needed

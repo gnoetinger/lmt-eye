@@ -107,6 +107,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
     t = TaskLogger( connection )
     t.addLog( "Build Event Group4 Make Break" , tmin=tmin, tmax=tmax )
                                                 
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

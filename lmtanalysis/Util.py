@@ -4,6 +4,7 @@ Created on 6 sept. 2017
 @author: Fab
 '''
 
+import logging
 import sys
 import math
 import time
@@ -47,10 +48,10 @@ def getAllEvents(connection=None, file=None, ):
     elif file:
         connection = sqlite3.connect(file)
 
-    print( "Loading event names:", end="")
+    logging.info( "Loading event names:" )
     c = connection.cursor().execute( "SELECT name FROM event GROUP BY name" )
     all_rows = c.fetchall()
-    print(f"{len(all_rows)} Done.")
+    logging.info( f"{len(all_rows)} Done." )
 
     return [row[0] for row in all_rows]
 
@@ -97,19 +98,19 @@ def getFrameInput( text ):
                 if answer.endswith("f"):
                     t+= float( answer[:-1] )
         except:
-            print("Error in entry.")
+            logging.error("Error in entry.")
             continue
         entryOk = True
 
     t = int(t)
-    print("Entry (in frame) : " + str( t ) )
+    logging.info("Entry (in frame) : " + str( t ) )
     return t
 
 
 def getMinTMaxTAndFileNameInput():
 
-    print ("Enter time information in frame. You can also set in days, hour, minutes")
-    print ("valid entries: 100, 1d, 1.5d, 23.5h, 1d 2h 3m 4s 5f")
+    print("Enter time information in frame. You can also set in days, hour, minutes")
+    print("valid entries: 100, 1d, 1.5d, 23.5h, 1d 2h 3m 4s 5f")
 
 
     tmin = getFrameInput("Starting t")
@@ -124,8 +125,8 @@ def getMinTMaxTAndFileNameInput():
 
 def getMinTMaxTInput():
 
-    print ("Enter time information in frame. You can also set in days, hour, minutes")
-    print ("valid entries: 100, 1d, 1.5d, 23.5h, 1d 2h 3m 4s 5f")
+    print("Enter time information in frame. You can also set in days, hour, minutes")
+    print("valid entries: 100, 1d, 1.5d, 23.5h, 1d 2h 3m 4s 5f")
 
     tmin = getFrameInput("Starting t")
     tmax = getFrameInput("Ending t")
@@ -134,8 +135,8 @@ def getMinTMaxTInput():
 
 def getExperimentDurationInput():
 
-    print ("Enter time information in frame. You can also set in days, hour, minutes")
-    print ("valid entries: 100, 1d, 1.5d, 23.5h, 1d 2h 3m 4s 5f")
+    print("Enter time information in frame. You can also set in days, hour, minutes")
+    print("valid entries: 100, 1d, 1.5d, 23.5h, 1d 2h 3m 4s 5f")
 
     experimentDuration = getFrameInput("experiment duration")
 
@@ -215,7 +216,7 @@ def getDatetimeFromFrame(connection, frame):
     rows = c.fetchall()
 
     if (len(rows) <= 0):
-        print ("The entered framenumber is out of range")
+        logging.warning("The entered framenumber is out of range")
         return None
 
     else:
@@ -251,18 +252,18 @@ def recoverFrame(file, MyDatetime):
     endTS = int ( int ( all_rows[0][1] ) / 1000 )
     endDate = datetime.datetime.fromtimestamp( endTS ).strftime('%d-%m-%Y %H:%M:%S')
 
-    #print ( file )
-    #print ( "Start date of record : " + startDate )
-    #print ( "End date of record : " + endDate )
+    #logging.debug ( file )
+    #logging.debug ( f"Start date of record : {startDate}" )
+    #logging.debug ( f"End date of record : {endDate}" )
 
-    #print(datetime.utcfromtimestamp(startTS).strftime('%Y/%m/%d %H:%M:%S'))
-    print(MyDatetime)
+    #logging.debug(datetime.utcfromtimestamp(startTS).strftime('%Y/%m/%d %H:%M:%S'))
+    logging.debug(MyDatetime)
 
     timeStamp = time.mktime(datetime.datetime.strptime(MyDatetime, "%Y-%m-%d %H:%M:%S").timetuple()) * 1000
 
-    print( "TimeStamp * 1000 is : " + str( timeStamp ) )
+    logging.debug( "TimeStamp * 1000 is : " + str( timeStamp ) )
 
-    print( "Searching closest frame in database....")
+    logging.debug( "Searching closest frame in database....")
 
     query = "SELECT FRAMENUMBER, TIMESTAMP FROM FRAME WHERE TIMESTAMP>{} AND TIMESTAMP<{}".format( timeStamp - 10000 , timeStamp + 10000 );
 
@@ -280,8 +281,8 @@ def recoverFrame(file, MyDatetime):
             smallestDif = dif
             closestFrame = int (row[0] )
 
-    print( "Closest Frame in selected database is: " + str( closestFrame ) )
-    print( "Distance to target: " + str( smallestDif ) + " milliseconds")
+    logging.info( "Closest Frame in selected database is: " + str( closestFrame ) )
+    logging.info( "Distance to target: " + str( smallestDif ) + " milliseconds")
     return closestFrame
 
 
@@ -340,7 +341,7 @@ def getStartTestPhase(pool):
     try:
         cursor.execute(query)
     except:
-        print("can't access data for PAUSED")
+        logging.error("can't access data for PAUSED")
 
     rows = cursor.fetchall()
     cursor.close()

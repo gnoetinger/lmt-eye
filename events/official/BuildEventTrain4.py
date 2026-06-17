@@ -32,7 +32,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
         pool = AnimalPool( )
         pool.loadAnimals( connection )
         if ( len ( pool.getAnimalList( ) ) < 4 ):
-            print("Train 4 cannot be computed on an experiment with less than 4 animals")
+            logging.debug("Train 4 cannot be computed on an experiment with less than 4 animals")
             return
         pool.loadDetection( start = tmin, end = tmax )    
     
@@ -61,7 +61,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
                 if ( not t in time ):
                     time[t] =[]
                     
-                #print ( t , ":" , train.idA , " -> ", train.idB , "*" )
+                #logging.debug ( f"t : {t}, train.idA : {train.idA}, train.idB : {train.idB}" )
                 time[t].append( train )
     
 
@@ -96,7 +96,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
                         train4[id1,id2,id3,id4][t]=True
                         
                         isValid = ": validated train 4"
-                    #print ( t , ":" , train1st.idA , " -> ", train1st.idB, "--->", train2nd.idA , " -> ", train2nd.idB , " -> ", train3rd.idA , " -> ", train3rd.idB , isValid )
+                    #logging.debug ( f"{t} : {train1st.idA} -> {train1st.idB} ---> {train2nd.idA} -> {train2nd.idB} -> {train3rd.idA} -> {train3rd.idB} {isValid}" )
 
 
     ''' save data '''
@@ -123,7 +123,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
     t = TaskLogger( connection )
     t.addLog( "Build Event Train4" , tmin=tmin, tmax=tmax )
 
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
     
     return
    

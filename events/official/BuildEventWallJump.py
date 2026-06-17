@@ -40,21 +40,21 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     
     
     for animal in pool.animalDictionary.keys():
-        print(pool.animalDictionary[animal])
+        logging.debug(f"Processing animal with baseId: {animal}")
         
         if ( showGraph ):    
             plt.subplot(2,2, animal )
         
         eventName = "WallJump"
-        print ( "A is jumping against the wall")        
-        print ( eventName )
+        logging.debug ( "A is jumping against the wall")        
+        logging.debug ( eventName )
                 
         JumpWallTimeLine = EventTimeLine( None, eventName , animal , None , None , None , loadEvent=False )
         
         result={}
         
         animalA = pool.animalDictionary[animal]
-        #print ( animalA )
+        #logging.debug ( animalA )
         dicA = animalA.detectionDictionary
 
         amplitude = 28
@@ -144,7 +144,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                 if ( showGraph ):
                     plt.plot( xList, yList, linestyle='-', linewidth=1 )            
                 
-                #print( "jump found. dist={} and t={}".format( totalDistance,t+window/2 ) )
+                #logging.debug( f"jump found. dist={totalDistance} and t={t+window/2}" )
                                        
             if ( jumpFound ):
                 ''' build the event on a thinner range to avoid event overlap and automatic continuity '''
@@ -174,7 +174,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Wall Jump" , tmin=tmin, tmax=tmax )
 
      
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
         
         

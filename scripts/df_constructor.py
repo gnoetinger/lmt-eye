@@ -2,11 +2,12 @@
 @author: xmousset
 """
 
-import numpy as np
-import pandas as pd
+import logging
+from sqlite3 import Connection
 from typing import Any, Literal
 
-from sqlite3 import Connection
+import numpy as np
+import pandas as pd
 
 from scripts.binner import Binner
 
@@ -149,7 +150,7 @@ class DataframeConstructor:
 
     def get_df_animals(self):
         """Get a DataFrame containing basic information about all animals."""
-        print(f"Creating ANIMALS dataframe")
+        logging.info(f"Creating ANIMALS dataframe")
         df = pd.read_sql("SELECT * FROM ANIMAL", self.animal_pool.conn)
 
         return df
@@ -184,6 +185,18 @@ class DataframeConstructor:
         )
         event_timeline.removeEventsBelowLength(maxLen=event_min_duration)
 
+        if self.analysis_area is not None:
+            animal.loadDetection(
+                start=bin_iterator[0][0],
+                end=bin_iterator[-1][1],
+                lightLoad=True,
+            )
+            animal.filterDetectionByArea(*self.analysis_area)
+            detection_frames = animal.detectionDictionary.keys()
+            event_timeline.keepOnlyEventCommonWithKeyDictionary(
+                detection_frames
+            )
+
         counts: list[int] = []
         durations: list[int] = []
         for f_min, f_max in bin_iterator:
@@ -207,8 +220,17 @@ class DataframeConstructor:
             bin_iterator = self.binner.get_bin_iterator()
 
         results = []
+
+        if self.analysis_area is not None:
+            self.animal_pool.loadDetection(
+                start=bin_iterator[0][0],
+                end=bin_iterator[-1][1],
+                lightLoad=True,
+            )
+            self.animal_pool.filterDetectionByArea(*self.analysis_area)
+
         for animal in self.animal_pool.getAnimalList():
-            print(
+            logging.debug(
                 f"Creating EVENT dataframe ({event}) "
                 f"for animal {animal.RFID}"
             )
@@ -254,7 +276,7 @@ class DataframeConstructor:
         df = None
 
         for bin_iterator in split_iterator:
-            print(
+            logging.info(
                 f"EVENT processing ({event}) for frames {bin_iterator[0][0]} "
                 f"to {bin_iterator[-1][1]}"
             )
@@ -269,7 +291,7 @@ class DataframeConstructor:
                 df = pd.concat([df, processed_df], ignore_index=True)
 
         if df is None:
-            print("Unable to create the event dataframe")
+            logging.warning("Unable to create the event dataframe")
             return None
 
         return df
@@ -288,12 +310,21 @@ class DataframeConstructor:
 
         df = None
         for bin_iterator in split_iterator:
-            print(
+            logging.info(
                 f"HISTOGRAM processing ({event}) for frames "
                 f"{bin_iterator[0][0]} to {bin_iterator[-1][1]}"
             )
+
+            if self.analysis_area is not None:
+                self.animal_pool.loadDetection(
+                    start=bin_iterator[0][0],
+                    end=bin_iterator[-1][1],
+                    lightLoad=True,
+                )
+                self.animal_pool.filterDetectionByArea(*self.analysis_area)
+
             for animal in self.animal_pool.getAnimalList():
-                print(
+                logging.debug(
                     f"Creating HISTOGRAM dataframe ({event}) "
                     f"for animal {animal.RFID}"
                 )
@@ -307,6 +338,12 @@ class DataframeConstructor:
                 event_timeline.removeEventsBelowLength(
                     maxLen=event_min_duration
                 )
+
+                if self.analysis_area is not None:
+                    detection_frames = animal.detectionDictionary.keys()
+                    event_timeline.keepOnlyEventCommonWithKeyDictionary(
+                        detection_frames
+                    )
 
                 processed_df = (
                     pd.DataFrame(
@@ -325,7 +362,7 @@ class DataframeConstructor:
                     df = pd.concat([df, processed_df], ignore_index=True)
 
         if df is None:
-            print("Unable to create the histogram dataframe")
+            logging.warning("Unable to create the histogram dataframe")
             return None
 
         df = df.groupby(["RFID", "ANIMALID", "NBFRAMES"], as_index=False).agg(
@@ -361,7 +398,9 @@ class DataframeConstructor:
 
         results = []
         for animal in self.animal_pool.getAnimalList():
-            print(f"Creating ACTIVITY dataframe for animal {animal.RFID}")
+            logging.debug(
+                f"Creating ACTIVITY dataframe for animal {animal.RFID}"
+            )
 
             stop_counts, stop_durations = self.count_event_per_bin(
                 animal, "Stop", 0, bin_iterator
@@ -376,11 +415,15 @@ class DataframeConstructor:
             )
 
             distances = animal.getDistancePerBin(
+                minFrame=bin_iterator[0][0],
+                maxFrame=bin_iterator[-1][1],
                 binIterator=bin_iterator,
                 filter_flickering=filter_flickering,
                 filter_stop=filter_stop,
             )
             speeds = animal.getSpeedPerBin(
+                minFrame=bin_iterator[0][0],
+                maxFrame=bin_iterator[-1][1],
                 binIterator=bin_iterator,
                 filter_flickering=filter_flickering,
                 filter_stop=filter_stop,
@@ -445,7 +488,7 @@ class DataframeConstructor:
         df = None
 
         for bin_iterator in split_iterator:
-            print(
+            logging.info(
                 f"ACTIVITY processing for frames {bin_iterator[0][0]} to "
                 f"{bin_iterator[-1][1]}"
             )
@@ -458,7 +501,7 @@ class DataframeConstructor:
                 df = pd.concat([df, processed_df], ignore_index=True)
 
         if df is None:
-            print("Unable to create the activity dataframe")
+            logging.warning("Unable to create the activity dataframe")
             return None
 
         return df
@@ -474,7 +517,7 @@ class DataframeConstructor:
         df = None
 
         for bin_iterator in split_iterator:
-            print(
+            logging.info(
                 f"TRAJECTORY processing for frames {bin_iterator[0][0]} to "
                 f"{bin_iterator[-1][1]}"
             )
@@ -487,13 +530,15 @@ class DataframeConstructor:
                 self.animal_pool.filterDetectionByArea(*self.analysis_area)
             results = []
             for animal in self.animal_pool.getAnimalList():
-                print(
+                logging.debug(
                     f"Creating TRAJECTORY dataframe for animal {animal.RFID}"
                 )
 
                 xList, yList, fList = animal.get_trajectory()
                 if animal.parameters is None:
-                    print(f"Animal parameters => Unable to convert to cm")
+                    logging.warning(
+                        f"Animal parameters => Unable to convert to cm"
+                    )
                     cm_over_px = 1.0
                 else:
                     cm_over_px = animal.parameters.scaleFactor
@@ -520,7 +565,7 @@ class DataframeConstructor:
                 df = pd.concat([df, processed_df], ignore_index=True)
 
         if df is None:
-            print("Unable to create the activity dataframe")
+            logging.warning("Unable to create the activity dataframe")
             return None
 
         return df
@@ -589,7 +634,7 @@ class DataframeConstructor:
 
         sensors_data: dict[str, list[dict[str, float]]] = {}
         for sensor in sensors:
-            print(f"Creating SENSOR dataframe ({sensor})")
+            logging.debug(f"Creating SENSOR dataframe ({sensor})")
             try:
                 cursor = self.animal_pool.conn.cursor()
                 cursor.execute(f"SELECT {sensor} FROM FRAME" + query_limits)
@@ -599,10 +644,10 @@ class DataframeConstructor:
                     sensor, frames, values, bin_iterator
                 )
             except:
-                print(f"Cannot access data for {sensor} => Skipping")
+                logging.warning(f"Cannot access data for {sensor} => Skipping")
 
         if not sensors_data.keys():
-            print("No sensor data available")
+            logging.warning("No sensor data available")
             return None
         else:
             for sensor in sensors:
@@ -639,7 +684,7 @@ class DataframeConstructor:
         df = None
 
         for bin_iterator in split_iterator:
-            print(
+            logging.info(
                 f"SENSORS processing for frames {bin_iterator[0][0]} to "
                 f"{bin_iterator[-1][1]}"
             )
@@ -652,7 +697,7 @@ class DataframeConstructor:
                 df = pd.concat([df, processed_df], ignore_index=True)
 
         if df is None:
-            print("Unable to create the sensors dataframe")
+            logging.warning("Unable to create the sensors dataframe")
             return None
 
         return df

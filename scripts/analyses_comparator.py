@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Callable
 
@@ -185,7 +186,7 @@ class AnalysesComparator:
         if output_folder.is_dir():
             HTMLReportManager.open_local_output(output_folder)
         else:
-            print(f"Output folder not found: {output_folder}")
+            logging.error(f"Output folder not found: {output_folder}")
 
     @staticmethod
     def update_progression(

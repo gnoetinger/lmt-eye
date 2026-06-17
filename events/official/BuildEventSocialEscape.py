@@ -23,7 +23,7 @@ def flush( connection ):
 
 def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalType = None ): 
     
-    print("STARTING SOCIAL ESCAPE")
+    logging.debug("STARTING SOCIAL ESCAPE")
     
     ''' use the pool provided or create it'''
     if ( pool == None ):
@@ -61,7 +61,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                 continue
             
             eventName = "Social escape"        
-            print ( eventName )
+            logging.debug ( eventName )
             
             socEscTimeLine = EventTimeLine( None, eventName , animal , idAnimalB , None , None , loadEvent=False )
                            
@@ -91,6 +91,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Social Escape" , tmin=tmin, tmax=tmax )
 
              
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

@@ -36,7 +36,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None , animalTy
     pool.loadAnimals( connection )
 
     if len(pool.animalDictionary.keys()) == 1:
-        print('Only one animal in database.')
+        logging.debug('Only one animal in database.')
         # if the animal has been tested alone, only the stop isolated event will be computed.'''
         stopSourceTimeLine = {}
 
@@ -63,7 +63,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None , animalTy
 
 
     else:
-        print('More than one animal in database.')
+        logging.debug('More than one animal in database.')
         isInContactSourceDictionary = {}
         stopSourceTimeLine = {}
         stopIsolatedTimeLine = {}
@@ -82,7 +82,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None , animalTy
             # load contact dictionary with another animal
             for animalB in pool.animalDictionary.keys():
                 if animal == animalB:
-                    print('Same identity')
+                    logging.debug('Same identity')
                     continue
                 else:
                     isInContactSourceDictionary[(animal, animalB)] = EventTimeLineCached( connection, file, "Contact", animal, animalB, minFrame=tmin, maxFrame=tmax ).getDictionary()
@@ -97,7 +97,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None , animalTy
                 framesToRemoveFromStopIsolatedTimeLine = []
                 stopSocialResult = {}
                 if animal == animalB:
-                    print('Same identity')
+                    logging.debug('Same identity')
                     continue
                 
                 # loop over eventlist
@@ -132,7 +132,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None , animalTy
     t = TaskLogger( connection )
     t.addLog( "Build Event Stop" , tmin=tmin, tmax=tmax )
                        
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
     
     
     

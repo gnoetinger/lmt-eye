@@ -3,6 +3,7 @@ Created on 25-11-2025
 @author: Xavier Mousset
 """
 
+import logging
 import sqlite3
 import numpy as np
 from typing import Any
@@ -184,7 +185,7 @@ def reBuildEvent(
             t.addLog(f"Build Event {event_name} (tmin or tmax is None)")
         else:
             t.addLog(f"Build Event {event_name}", tmin=tmin, tmax=tmax)
-    print(f"Event rebuilding finished: {', '.join(EVENTS_NAME)}")
+    logging.debug(f"Event rebuilding finished: {', '.join(EVENTS_NAME)}")
 
 
 # Do not modify
@@ -192,4 +193,5 @@ def reBuildEvent(
 def flush(connection) -> None:
     """Flush event in database"""
     for event_name in EVENTS_NAME:
+        logging.info(f"Flushing event: {event_name}")
         deleteEventTimeLineInBase(connection, event_name)

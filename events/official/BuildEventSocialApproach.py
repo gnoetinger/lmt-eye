@@ -54,11 +54,11 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                 continue
             
             if twoMeanBodyLen[idAnimalB] == None:
-                print("Social Approach: can't compute mean bodyLen. Skip animal." )
+                logging.debug("Social Approach: can't compute mean bodyLen. Skip animal." )
                 continue
             
             eventName = "Social approach"        
-            print ( eventName )
+            logging.debug ( eventName )
             
             socAppTimeLine = EventTimeLine( None, eventName , animal , idAnimalB , None , None , loadEvent=False )
                            
@@ -91,6 +91,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Social Approach" , tmin=tmin, tmax=tmax )
 
         
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

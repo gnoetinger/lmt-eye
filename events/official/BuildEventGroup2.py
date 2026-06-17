@@ -57,7 +57,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                         continue
                 
                     eventName = "Group2"        
-                    print ( eventName )
+                    logging.debug( eventName )
                     
                     groupTimeLine = EventTimeLine( None, eventName , animal , idAnimalB , None , None , loadEvent=False )
                     
@@ -89,6 +89,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Group 2" , tmin=tmin, tmax=tmax )
 
                            
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

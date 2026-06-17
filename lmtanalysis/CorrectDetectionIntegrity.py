@@ -29,7 +29,7 @@ from lmtanalysis.Chronometer import Chronometer
 def loadDetectionMap( connection, animal, start=None, end=None ):
     
         chrono = Chronometer("Correct detection integrity: Load detection map")
-        print( "processing animal ID: {}".format( animal ))
+        logging.debug( f"processing animal ID: {animal}" )
 
         result = {}
         
@@ -41,7 +41,7 @@ def loadDetectionMap( connection, animal, start=None, end=None ):
         if ( end != None ):
             query += " AND FRAMENUMBER<={}".format(end )
             
-        print( query )
+        logging.debug( query )
         cursor.execute( query )
         
         rows = cursor.fetchall()
@@ -51,7 +51,7 @@ def loadDetectionMap( connection, animal, start=None, end=None ):
             frameNumber = row[0]
             result[frameNumber] = True;
         
-        print ( " detections loaded in {} seconds.".format( chrono.getTimeInS( )) )
+        logging.debug( f" detections loaded in {chrono.getTimeInS()} seconds." )
         
         return result
 
@@ -95,7 +95,7 @@ def correct( connection, tmin=None, tmax=None ):
                 if not ( t in validDetectionTimeLineDictionary ):
             
                     query = "UPDATE `DETECTION` SET `ANIMALID`=NULL WHERE `FRAMENUMBER`='{}';".format( t )
-                    #print ( query )
+                    #logging.debug ( query )
                     cursor.execute( query )
     
     connection.commit()
@@ -110,6 +110,6 @@ def correct( connection, tmin=None, tmax=None ):
     t.addLog( "Correct detection integrity" , tmin=tmin, tmax=tmax )
 
        
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

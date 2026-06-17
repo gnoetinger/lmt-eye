@@ -28,7 +28,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     #pool.loadDetection( start = tmin, end = tmax )
     
     if pool.getNbAnimals() <= 2:
-        print( "Not enough animals to process group 3")
+        logging.warning( "Not enough animals to process group 3")
         return
 
     contact = {}
@@ -59,7 +59,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                         continue
                 
                     eventName = "Group3"        
-                    print ( eventName )
+                    logging.debug( eventName )
                     
                     groupTimeLine = EventTimeLine( None, eventName , animal , idAnimalB , idAnimalC , None , loadEvent=False )
                     
@@ -97,6 +97,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Group 3" , tmin=tmin, tmax=tmax )
       
                     
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

@@ -44,7 +44,7 @@ def reBuildEvent( connection, file,  tmin=None, tmax=None, pool = None, animalTy
     EVENT_MIN_LEN = 10
     
     for idAnimalB in pool.animalDictionary.keys():
-        print(pool.animalDictionary[idAnimalB])
+        logging.debug(f"Processing animal with baseId: {idAnimalB}")
         meanSizeB = pool.animalDictionary[idAnimalB].getMeanBodyLength( tmax = tmax )
         
         for animal in pool.animalDictionary.keys():
@@ -69,7 +69,7 @@ def reBuildEvent( connection, file,  tmin=None, tmax=None, pool = None, animalTy
     oral oral followed by a oral-genital
     '''
     eventName ="seq oral oral - oral genital"
-    print ( eventName )                    
+    logging.debug ( eventName )                    
     
     for animal in range( 1 , nbAnimal+1 ):
         
@@ -80,7 +80,7 @@ def reBuildEvent( connection, file,  tmin=None, tmax=None, pool = None, animalTy
                     
             selOO_OG_TimeLine = EventTimeLine( None, eventName , animal , idAnimalB , None , None , loadEvent=False )
             
-            print( selOO_OG_TimeLine.eventNameWithId ) 
+            logging.debug( selOO_OG_TimeLine.eventNameWithId ) 
                     
             oralOralTimeLine = oralOral[ animal , idAnimalB ]
             
@@ -117,7 +117,7 @@ def reBuildEvent( connection, file,  tmin=None, tmax=None, pool = None, animalTy
     oral A genital B followed by oral oral
     '''
     eventName ="seq oral geni - oral oral"
-    print ( eventName )                    
+    logging.debug ( eventName )                    
     
     for animal in range( 1 , nbAnimal+1 ):
         
@@ -128,7 +128,7 @@ def reBuildEvent( connection, file,  tmin=None, tmax=None, pool = None, animalTy
                     
             selOG_OO_TimeLine = EventTimeLine( None, eventName , animal , idAnimalB , None , None , loadEvent=False )
             
-            print( selOG_OO_TimeLine.eventNameWithId ) 
+            logging.debug( selOG_OO_TimeLine.eventNameWithId ) 
                     
             oralGenitalTimeLine = oralGenital[ animal , idAnimalB ]
             
@@ -166,6 +166,6 @@ def reBuildEvent( connection, file,  tmin=None, tmax=None, pool = None, animalTy
     t.addLog( "Build Event Oral Side Sequence" , tmin=tmin, tmax=tmax )
 
                     
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

@@ -2,9 +2,10 @@
 @author: xmousset
 """
 
-from abc import ABC, abstractmethod
+import logging
 from typing import Any
 from pathlib import Path
+from abc import ABC, abstractmethod
 
 import pandas as pd
 
@@ -102,7 +103,7 @@ class GenericSettings(ABC):
     def __init__(self) -> None:
         """Initialise with default values and a ParameterSaver."""
         self.reset()
-        print("LMT-EYE settings initialized to default values.")
+        logging.debug("LMT-EYE settings initialized.")
         self._saver = ParameterSaver()
 
     def as_dict(self) -> dict[str, Any]:
@@ -130,7 +131,7 @@ class GenericSettings(ABC):
         self._saver.reset()
         self._saver.set_values(self.as_str_dict())
         self._saver.save(file_path)
-        print("LMT-EYE settings saved to file:", file_path)
+        logging.info(f"LMT-EYE settings saved to file: {file_path}")
 
     def load(self, file_path: Path) -> None:
         """Load the settings from a JSON file."""
@@ -142,7 +143,7 @@ class GenericSettings(ABC):
             self._saver.get_parameters()
         )
         self.update_from_dict(settings)
-        print("LMT-EYE settings loaded from file:", file_path)
+        logging.info(f"LMT-EYE settings loaded from file: {file_path}")
 
     def as_html(self) -> str:
         """Return the current settings as an HTML table."""
@@ -420,15 +421,15 @@ class AnalysisSettings(GenericSettings):
 
         if isinstance(start, str):
             try:
-                start = pd.Timestamp(start)
-            except:
                 start = int(start)
+            except:
+                start = pd.Timestamp(start)
 
         if isinstance(end, str):
             try:
-                end = pd.Timestamp(end)
-            except:
                 end = int(end)
+            except:
+                end = pd.Timestamp(end)
 
         return (start, end)
 

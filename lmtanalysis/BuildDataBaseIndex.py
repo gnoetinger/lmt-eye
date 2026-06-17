@@ -3,6 +3,7 @@ Created on 6 sept. 2017
 
 @author: Fab
 '''
+import logging
 from lmtanalysis.TaskLogger import TaskLogger
 
 def getNumberOfIndexOfDatabase( connection ):
@@ -12,27 +13,27 @@ def getNumberOfIndexOfDatabase( connection ):
     c.execute( query )
     rows = c.fetchall()
     nbIndex = len( rows )
-    print( "Number of index in lmtanalysis: ", nbIndex )
+    logging.debug( f"Number of index in lmtanalysis: {nbIndex}" )
     return nbIndex
 
 def executeLog( cursor, query):
     try:
-        print( query )
+        logging.debug( query )
         cursor.execute( query )
     except Exception as e:
-        print (e)
+        logging.debug (e)
     
 
 def buildDataBaseIndex( connection , force=False):
 
-    print( "Creating lmtanalysis indexes...")
+    logging.info( "Creating lmtanalysis indexes...")
 
     c = connection.cursor()            
 
     '''
     if ( force == False ):
         if( getNumberOfIndexOfDatabase( connection ) > 0 ):
-            print( "Index already exists (maybe not all)... no re-indexing. Use buildDataBaseIndex force parameter to force index build.")
+            logging.debug( "Index already exists (maybe not all)... no re-indexing. Use buildDataBaseIndex force parameter to force index build.")
             return
     '''
      

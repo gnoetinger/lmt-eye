@@ -3,6 +3,7 @@ Created on 12 sept. 2017
 
 @author: Fab
 '''
+import logging
 
 import math
 from lmtanalysis.Measure import *
@@ -85,7 +86,7 @@ class Mask():
         
         '''
         if not hasattr(self, 'pointX'):
-            print( "none")
+            logging.warning( "none")
             return None
         '''
         try:
@@ -96,7 +97,7 @@ class Mask():
             roundness = ( self.getPerimeter()**2 ) / ( 4.0 * math.pi * area )
             return roundness;
         except:
-            print("Problem in Mask.getRoundness()" )
+            logging.warning("Problem in Mask.getRoundness()" )
             
         return None
         
@@ -144,14 +145,14 @@ class Mask():
                 s2+="0"
             s2+=value+" "
             
-        #print ( s2 )
-        #print ("************")
+        #logging.debug ( s2 )
+        #logging.debug ("************")
         b = bytearray.fromhex( s2 )
         
-        #print("uncompressed: ")
+        #logging.debug("uncompressed: ")
         uncompressed= zlib.decompress( b )
         
-        #print ( uncompressed )
+        #logging.debug ( uncompressed )
                     
         self.pointsX= []
         self.pointsY= []

@@ -7,6 +7,7 @@ Created on 5 févr. 2025
 import os
 import os.path
 import ftplib
+import logging
 from glob import glob
 from random import randint
 from datetime import datetime
@@ -154,22 +155,22 @@ class WebSite(object):
 
     def cache(self, file ):
         if self.cacheFolder==None:
-            print("Website > can't cache: no cache folder set.")
+            logging.error("Website > can't cache: no cache folder set.")
             return 
         file = os.path.basename( file )
         fileToCache = self.outFolder + "/" + file
         cacheFile = self.cacheFolder+"/"+file
-        print(f"Caching file {file}")
+        logging.info(f"Caching file {file}")
         shutil.copy( fileToCache , cacheFile )
         
     def useCache(self, file ):
         if self.cacheFolder==None:
-            print("Website > can't retreive cache: no cache folder set.")
+            logging.error("Website > can't retreive cache: no cache folder set.")
             return
         file = os.path.basename( file )
         cacheFile = self.cacheFolder+"/"+file
         if os.path.isfile( cacheFile ):
-            print(f"Using cache for file {file}")
+            logging.info(f"Using cache for file {file}")
             shutil.copy( cacheFile , self.outFolder + "/" + file )
             return True
             
@@ -180,7 +181,7 @@ class WebSite(object):
         
     def initWebSiteOutFolder(self  ):
         
-        print("remove existing files...")
+        logging.info("Remove existing report files...")
         
         files = []
         files.extend( glob( f"{self.outFolder}/*.html" ) ) 
@@ -190,11 +191,11 @@ class WebSite(object):
         files.extend( glob( f"{self.outFolder}/*.js" ) )
 
         for f in files:
-            print("removing..." , f )
+            logging.debug(f"Removing... {f}")
             os.remove(f)
             
         # copy initial files
-        print("Copy default website ...")
+        logging.info("Copy default website ...")
         if self.defaultWebSiteFolder != None:        
             files = []
             files.extend( glob( f"{self.defaultWebSiteFolder}/*.css" ) )
@@ -203,12 +204,12 @@ class WebSite(object):
             files.extend( glob( f"{self.defaultWebSiteFolder}/*.png" ) )
             files.extend( glob( f"{self.defaultWebSiteFolder}/*.pdf" ) )
             for file in files:      
-                print(f"copy {file} --> {self.outFolder}/{os.path.basename(file)} ")      
+                logging.debug(f"Copy {file} --> {self.outFolder}/{os.path.basename(file)} ")      
                 shutil.copy( f"{file}" , f"{self.outFolder}/{os.path.basename(file)}")
         
         
     def generateWebSite(self ):
-        print("Generating website...")
+        logging.info("Generating website...")
         
         templateFolder = self.templateFolder
         outFolder = self.outFolder
@@ -220,7 +221,8 @@ class WebSite(object):
         env = self.env
         
         experimentList = self.experimentManager.getExperimentList()
-        print( experimentList )
+        names = [experiment.name for experiment in experimentList]
+        logging.info(f"Experiment list: {names}")
         
 
         # Main index generation
@@ -255,11 +257,11 @@ class WebSite(object):
         
         # Sub pages generation
         
-        print("Sub page generation...")
+        logging.info("Sub page generation...")
         
         for experiment in experimentList:
         
-            print ( experiment ) 
+            logging.debug( experiment ) 
             experimentFile = experiment.url
                        
             content = ""
@@ -286,18 +288,18 @@ class WebSite(object):
         #passFile = os.path.dirname(os.path.abspath(__file__)) + '/ftp_password.json'
         
         if self.passFile == None:
-            print("No passfile set. Upload canceled.")
+            logging.error("No passfile set. Upload canceled.")
             return
             
         with open( self.passFile ) as f:
             connectData = json.load(f)
                         
         session = ftplib.FTP_TLS(connectData["url"],connectData["login"],connectData["password"])
-        print( session )
+        logging.debug(f"FTP session: {session}")
                 
         # www/report
         
-        print ( localFolder )
+        logging.debug(f"Local folder: {localFolder}")
         files = []
         files.extend( glob( f"{localFolder}/*.css" ) )
         files.extend( glob( f"{localFolder}/*.js" ) )
@@ -315,7 +317,7 @@ class WebSite(object):
         session.cwd( f"/" )
         
         for f in onServerFiles:
-            print( f )
+            logging.debug(f"File on server: {f}")
         
         # don't re upload files in mp4 if already on server
         filesToRemove = []
@@ -325,7 +327,7 @@ class WebSite(object):
                 for fileOnline in onServerFiles:
                     if simpleFile in fileOnline:
                         filesToRemove.append( file )
-                        print(f"Already existing file on server: Skip upload for file {file}")
+                        logging.info(f"Already existing file on server: Skip upload for file {file}")
                         break
         for file in filesToRemove:
             files.remove( file )
@@ -334,15 +336,15 @@ class WebSite(object):
             
             f = open( file ,'rb')
             fileName = os.path.basename(file)
-            print( f"sending {file}")
+            logging.info(f"sending {file}")
             storeCommand = f"STOR {remoteFolder}/{fileName}"
-            print( storeCommand )
+            logging.info(f"store command: {storeCommand}")
             session.storbinary( storeCommand, f )            
             
             
             f.close()
     
-        print("Upload done.")
+        logging.info("Upload done.")
         
         session.quit()
         

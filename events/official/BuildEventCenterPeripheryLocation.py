@@ -40,15 +40,15 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     '''
     
     for animal in pool.animalDictionary.keys():
-        print(pool.animalDictionary[animal])
+        logging.debug(f"Processing animal with baseId: {animal}")
         
         eventNameCenter = "Center Zone"
-        print ( "A is in the center zone")        
-        print ( eventNameCenter )
+        logging.debug( "A is in the center zone")        
+        logging.debug( eventNameCenter )
         
         eventNamePeriphery = "Periphery Zone"
-        print ( "A is in the periphery zone")        
-        print ( eventNamePeriphery )
+        logging.debug( "A is in the periphery zone")        
+        logging.debug( eventNamePeriphery )
                 
         centerZoneTimeLine = EventTimeLine( None, eventNameCenter , animal , None , None , None , loadEvent=False )
         peripheryZoneTimeLine = EventTimeLine( None, eventNamePeriphery , animal , None , None , None , loadEvent=False )
@@ -57,7 +57,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
         resultPeriphery={}
         
         animalA = pool.animalDictionary[animal]
-        #print ( animalA )
+        #logging.debug( animalA )
         dicA = animalA.detectionDictionary
             
         for t in dicA.keys():
@@ -80,7 +80,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Center Zone" , tmin=tmin, tmax=tmax )
     t.addLog( "Build Event Periphery Zone" , tmin=tmin, tmax=tmax )
 
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
         
         

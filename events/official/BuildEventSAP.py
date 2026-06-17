@@ -55,6 +55,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None , animalTy
     t.addLog( "Build Event SAP" , tmin=tmin, tmax=tmax )
 
                
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

@@ -3,7 +3,11 @@ Created on 6 févr. 2025
 
 @author: Fab
 '''
+import logging
 from datetime import datetime
+
+from res.report.Report import Report
+
 
 class ExperimentManager(object):
     
@@ -14,10 +18,13 @@ class ExperimentManager(object):
     def __init__(self ):
         
         self.experimentList = []
-        
-    def addReport(self , report, index = None ):
-        print( "addding report " , report )
-        
+
+    def addReport(self, report: Report, index=None):
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            name_split = report.title.split(">")
+            report_name = name_split[len(name_split) // 2]
+            logging.debug(f"Adding report: {report_name}")
+
         for experiment in self.experimentList:
             if experiment.name == report.experimentName:
                 experiment.addReport( report , index )
@@ -118,16 +125,3 @@ class Experiment(object):
     
     def __str__(self, *args, **kwargs):
         return f"Experiment {self.name}"
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    

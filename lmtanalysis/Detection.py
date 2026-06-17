@@ -4,6 +4,7 @@ Created on 12 sept. 2017
 @author: Fab
 '''
 
+import logging
 import math
 from lmtanalysis.Measure import *
 
@@ -126,7 +127,7 @@ class Detection():
             return None
         
         if (math.hypot( self.massX - detectionB.massX, self.massY - detectionB.massY ) > parameters.MAX_DISTANCE_THRESHOLD): #if the distance calculated between the two individuals is too large, discard
-            print("WARNING: Detection.getDistanceTo : Distance Max reached. returning None")
+            logging.warning("Detection.getDistanceTo : Distance Max reached. returning None")
             return None
         
         else:

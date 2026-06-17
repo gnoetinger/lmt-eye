@@ -47,7 +47,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
         animalA = pool.animalDictionary[idAnimalA]
         moveHighSpeedTimeLineDic[idAnimalA] = {}
         
-        print(pool.animalDictionary[idAnimalA])
+        logging.debug(f"Processing animal with baseId: {idAnimalA}")
         animalA.filterDetectionByInstantSpeed(parameters.HIGH_SPEED_MOVE_THRESHOLD, parameters.MAXIMUM_SPEED_THRESHOLD)
         
         moveHighSpeedTimeLine[idAnimalA].reBuildWithDictionary( animalA.detectionDictionary )
@@ -58,6 +58,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t = TaskLogger( connection )
     t.addLog( f"Move high speed ({parameters.HIGH_SPEED_MOVE_THRESHOLD}-{parameters.MAXIMUM_SPEED_THRESHOLD})" , tmin=tmin, tmax=tmax )
     
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

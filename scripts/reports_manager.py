@@ -2,8 +2,7 @@
 @author: xmousset
 """
 
-import os
-import sys
+import logging
 import webbrowser
 from pathlib import Path
 from typing import Literal
@@ -38,7 +37,7 @@ class HTMLReportManager:
     def open_local_output(output_folder: Path):
         """Open the generated local HTML output in the default web browser."""
         if not (output_folder / "index.html").exists():
-            print("HTMLReportManager did not find index.html.")
+            logging.warning("HTMLReportManager did not find index.html.")
         else:
             webbrowser.open(str(output_folder / "index.html"))
 
@@ -280,4 +279,4 @@ class HTMLReportManager:
             webSite.addReport(report)
 
         webSite.generateWebSite()
-        print("Local output generated at:\n" + str(output_folder))
+        logging.info(f"Local output generated at: {output_folder}")

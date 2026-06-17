@@ -1,3 +1,4 @@
+import logging
 from types import ModuleType
 from typing import Any, Literal
 
@@ -99,7 +100,7 @@ class EventSelectionWindow(QDialog):
             list_events = ", ".join(self.selected_events)
         else:
             list_events = "No event selected"
-        print(f"Selected events: {list_events}.")
+        logging.info(f"Selected events: {list_events}.")
         self.accept()
 
     def get_selected_events(self) -> set[str]:

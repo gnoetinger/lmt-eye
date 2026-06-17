@@ -5,6 +5,7 @@
 
 import sys
 import os
+import logging
 import traceback
 import subprocess
 from types import ModuleType
@@ -124,10 +125,10 @@ class EventsRebuilder:
         necessary."""
         mem = virtual_memory()
         availableMemoryGB = mem.total / 1_000_000_000
-        print("Total memory on computer: (GB)", availableMemoryGB)
+        logging.info(f"Total memory on computer: (GB) {availableMemoryGB}")
 
         if availableMemoryGB < 10:
-            print("Not enough memory to use cache load of events.")
+            logging.warning("Not enough memory to use cache load of events.")
             disableEventTimeLineCache()
 
     def _rebuild_window(
@@ -146,18 +147,20 @@ class EventsRebuilder:
         """
 
         if not modules:
-            print("Empty module list. Flushing not necessary.")
+            logging.info("Empty module list. Flushing not necessary.")
             return
 
         CheckWrongAnimal.check(self.conn, window[0], window[1])
 
         animalPool = None
         flushEventTimeLineCache()
-        print("Caching load of animal detection...")
+        logging.info(
+            f"Caching load of animal detection for rebuilding "
+            f"between frame {window[0]} and {window[1]}"
+        )
         animalPool = AnimalPool()
         animalPool.loadAnimals(self.conn)
         animalPool.loadDetection(start=window[0], end=window[1])
-        print("Caching load of animal detection done.")
 
         nb_modules = len(modules)
         progression = [
@@ -166,13 +169,17 @@ class EventsRebuilder:
             progress_callback,
         ]
         self.update_progression(*progression)
-
+        logging.info(
+            f"Rebuilding {len(modules)} events in the database "
+            f"between frame {window[0]} and {window[1]}"
+        )
         for i, build_event_module in enumerate(
             sort_in_official_order(modules)
         ):
 
-            event_chrono = Chronometer(str(build_event_module))
-            print(f"Processing module: {build_event_module.__name__}...")
+            event_chrono = Chronometer(build_event_module.__name__)
+            module_name = build_event_module.__name__.split('.')[-1]
+            logging.info(f"Processing {module_name}.py")
             build_event_module.reBuildEvent(
                 connection=self.conn,
                 file=None,
@@ -181,7 +188,7 @@ class EventsRebuilder:
                 pool=animalPool,
                 animalType=self.animal_type,
             )
-            event_chrono.printTimeInS()
+            logging.info(f"Rebuild time: {event_chrono.getTimeInS():.2f} s")
 
             progression[0] = i + 1 + nb_modules * window_progress[0]
             self.update_progression(*progression)
@@ -199,7 +206,7 @@ class EventsRebuilder:
         printed to the console.
         """
         if not modules:
-            print("No modules to rebuild.")
+            logging.info("No modules to rebuild.")
             self.update_progression(1, 1, progress_callback)
             return
 
@@ -212,7 +219,7 @@ class EventsRebuilder:
             cursor.execute(query)
             self.conn.commit()
         except:
-            print("METADATA field already exists")
+            logging.warning("METADATA field already exists")
 
         BuildDataBaseIndex.buildDataBaseIndex(self.conn, force=False)
 
@@ -220,7 +227,7 @@ class EventsRebuilder:
             chrono = Chronometer("Flushing events")
             for module in modules:
                 module.flush(self.conn)
-            chrono.printTimeInS()
+            logging.info(f"Flushing time: {chrono.getTimeInS():.2f} s")
 
             processing_windows = self.binner.get_bin_iterator()
             nb_windows = len(processing_windows)
@@ -247,7 +254,7 @@ class EventsRebuilder:
             raise Exception()
 
         self.update_progression(1, 1, progress_callback)
-        print("\n*** REBUILD FINISHED ***\n")
+        logging.info("*** REBUILD FINISHED ***")
 
     @staticmethod
     def update_progression(

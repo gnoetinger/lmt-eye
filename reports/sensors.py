@@ -2,6 +2,8 @@
 @author: xmousset
 """
 
+import logging
+
 import pandas as pd
 import plotly.express as px
 
@@ -25,7 +27,7 @@ def generic_reports(
     report_manager.reports_creation_focus("Sensors")
 
     if df is None:
-        print("No sensors data available")
+        logging.warning("No sensors data available. Creating empty report.")
         report_manager.add_report(
             name="Sensors data not available",
             html_or_figure="""

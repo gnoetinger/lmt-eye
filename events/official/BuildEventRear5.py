@@ -44,14 +44,14 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     contact = {}
     
     for animal in pool.animalDictionary.keys():
-        print(pool.animalDictionary[animal])
+        logging.debug(f"Processing animal with baseId: {animal}")
         
         contact[animal] = EventTimeLineCached( connection, file, "Contact", animal, minFrame=tmin, maxFrame=tmax )
         contactDico = contact[animal].getDictionary()
         
         eventName1 = "Rear isolated"
         eventName2 = "Rear in contact"
-        print ( "A rears")        
+        logging.debug ( "A rears")        
                 
         rearSocialTimeLine = EventTimeLine( None, eventName2 , animal , None , None , None , loadEvent=False )
         rearIsolatedTimeLine = EventTimeLine( None, eventName1 , animal , None , None , None , loadEvent=False )
@@ -60,7 +60,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
         resultIsolated={}
         
         animalA = pool.animalDictionary[animal]
-        #print ( animalA )
+        #logging.debug ( animalA )
         dicA = animalA.detectionDictionary
             
         for t in dicA.keys():
@@ -73,11 +73,11 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                 continue;
                 
             if (t in contactDico.keys()):
-                #print("social")
+                #logging.debug("social")
                 resultSocial[t] = True
             
             else:
-                #print("isolated")
+                #logging.debug("isolated")
                 resultIsolated[t] = True
     
         rearSocialTimeLine.reBuildWithDictionary( resultSocial )
@@ -93,7 +93,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Rear5" , tmin=tmin, tmax=tmax )
 
                 
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
         
         

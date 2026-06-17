@@ -5,6 +5,7 @@ Huddling Event Detection
 Created on 6 sept. 2017
 """
 
+import logging
 import sqlite3
 import numpy as np
 from typing import Any
@@ -67,11 +68,11 @@ def reBuildEvent(
 
         n_hour = 0
         # Exceptional print here, because Huddling can be very long to process
-        print(f"Processing Huddling frames for animal {animal.baseId}...")
+        logging.info(f"Processing Huddling for animal {animal.baseId}...")
         for frame_num in range(tmin, tmax + 1):
             if frame_num % oneHour == 0:
                 n_hour += 1
-                print(f"Processing Huddling, {n_hour} hour(s) processed")
+                logging.info(f"Processing Huddling, {n_hour} hours processed")
 
             # Get the binary detection mask for this frame
             mask = animal.getBinaryDetectionMask(frame_num)
@@ -102,7 +103,7 @@ def reBuildEvent(
             t.addLog(f"Build Event {event_name} (tmin or tmax is None)")
         else:
             t.addLog(f"Build Event {event_name}", tmin=tmin, tmax=tmax)
-    print(f"Event rebuilding finished: {', '.join(EVENTS_NAME)}")
+    logging.debug(f"Event rebuilding finished: {', '.join(EVENTS_NAME)}")
 
 
 # Do not modify
@@ -110,4 +111,5 @@ def reBuildEvent(
 def flush(connection) -> None:
     """Flush event in database"""
     for event_name in EVENTS_NAME:
+        logging.info(f"Flushing event: {event_name}")
         deleteEventTimeLineInBase(connection, event_name)

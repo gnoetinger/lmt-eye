@@ -2,15 +2,15 @@
 @author: xmousset
 """
 
-print("Starting LMT-EYE...")
+print("\n === LMT-EYE === \n")
 from pathlib import Path
 
 # ================ APP INFO ================
 # command for executable creation (run in terminal at project root):
 # pyinstaller --onefile --icon=res/lmt_eye_icon.png --add-data "res/lmt_eye_icon.png;res" --add-data "res/template;res/template" --add-data "res/assets;res/assets" --add-data "res/mouse_run.gif;res" --add-data "events/custom;events/custom" lmt_eye.py
 
-APP_VERSION = "2.2"
-APP_RELEASE = "2026-mm-dd"
+APP_VERSION = "2.3"
+APP_RELEASE = "2026-06-17"
 
 APP_PATH = Path(__file__).parent
 ICON_PATH = APP_PATH / "res" / "lmt_eye_icon.png"
@@ -18,6 +18,7 @@ GIF_PATH = APP_PATH / "res" / "mouse_run.gif"
 
 # ================ IMPORTS ================
 import sys
+import logging
 import traceback
 from typing import Literal
 from datetime import datetime
@@ -35,6 +36,9 @@ from PyQt6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QInputDialog,
+    QCheckBox,
+    QComboBox,
+    QLineEdit,
     QLabel,
     QMainWindow,
     QMessageBox,
@@ -45,19 +49,23 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from scripts.logger import logger_setup
+from scripts.settings import ComparisonSettings
 from scripts.db_analyzer import DatabaseAnalyzer
 from scripts.analyses_comparator import AnalysesComparator
 
-from scripts.settings import ComparisonSettings
-from widgets.settings_analysis_window import (
-    AnalysisSettingsWindow,
-)
-from widgets.settings_comparison_window import (
-    ComparisonSettingsWindow,
-)
-
-from widgets.pyqt6_tools import YesNoQuestion, get_btn_style
 from widgets.sql_modifications import UpdateDatabaseInfo
+from widgets.pyqt6_tools import YesNoQuestion, get_btn_style
+from widgets.settings_analysis_window import AnalysisSettingsWindow
+from widgets.settings_comparison_window import ComparisonSettingsWindow
+
+logger_setup(
+    level=logging.INFO,
+    display_level=False,
+    display_time=False,
+    display_file_and_line=False,
+    write_to_file=None,
+)
 
 
 class LMTEYEApp(QMainWindow):
@@ -93,6 +101,10 @@ class LMTEYEApp(QMainWindow):
         if debug_menu is None:
             raise RuntimeError("Debug menu error.")
         debug_menu.addAction("Reset settings", lambda: self.reset_settings())
+        debug_menu.addAction(
+            "Logging setup",
+            lambda: LoggingConfigDialog(self).exec(),
+        )
 
         help_menu = menu.addMenu("Help")
         if help_menu is None:
@@ -106,7 +118,9 @@ class LMTEYEApp(QMainWindow):
             if idx >= 0 and idx < self.stacked.count():
                 new_idx = idx
             else:
-                print(f"Invalid index {idx} for stacked widget. Ignoring.")
+                logging.warning(
+                    f"Invalid index {idx} for stacked widget. Ignoring."
+                )
                 return
         else:
             new_idx = (self.stacked.currentIndex() + 1) % self.stacked.count()
@@ -227,6 +241,99 @@ class HelpDialog(QDialog):
         )
 
 
+class LoggingConfigDialog(QDialog):
+    """Dialog to configure logging settings at runtime."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Logging setup")
+        self.setFixedWidth(400)
+        self._init_ui()
+
+    def _init_ui(self):
+        form = QFormLayout()
+
+        # Level selector
+        self.level_cb = QComboBox()
+        levels = [
+            ("DEBUG", logging.DEBUG),
+            ("INFO", logging.INFO),
+            ("WARNING", logging.WARNING),
+            ("ERROR", logging.ERROR),
+            ("CRITICAL", logging.CRITICAL),
+        ]
+        for name, _ in levels:
+            self.level_cb.addItem(name)
+        self.level_cb.setCurrentText("INFO")
+
+        # Checkboxes
+        self.chk_display_level = QCheckBox("Display level")
+        self.chk_display_time = QCheckBox("Display time")
+        self.chk_file_and_line = QCheckBox("Display file and line")
+
+        # File output
+        file_row = QHBoxLayout()
+        self.file_le = QLineEdit()
+        browse_btn = QPushButton("Browse")
+        browse_btn.clicked.connect(self._browse_file)
+        file_row.addWidget(self.file_le)
+        file_row.addWidget(browse_btn)
+
+        form.addRow("Level:", self.level_cb)
+        form.addRow("", self.chk_display_level)
+        form.addRow("", self.chk_display_time)
+        form.addRow("", self.chk_file_and_line)
+        form.addRow("Write to file:", file_row)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self._apply)
+        buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout(self)
+        layout.addLayout(form)
+        layout.addWidget(buttons)
+
+    def _browse_file(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Select log file",
+            "",
+            "Log files (*.log);;All files (*)",
+        )
+        if path:
+            self.file_le.setText(path)
+
+    def _apply(self):
+        level_name = self.level_cb.currentText()
+        level = getattr(logging, level_name, logging.INFO)
+        display_level = self.chk_display_level.isChecked()
+        display_time = self.chk_display_time.isChecked()
+        display_file_and_line = self.chk_file_and_line.isChecked()
+        write_to_file = self.file_le.text() or None
+
+        try:
+            logger_setup(
+                level=level,
+                display_level=display_level,
+                display_time=display_time,
+                display_file_and_line=display_file_and_line,
+                write_to_file=write_to_file,
+            )
+            QMessageBox.information(
+                self, "Logging", "Logging configuration updated."
+            )
+            logging.info("Logging configuration updated.")
+            self.accept()
+        except Exception as e:
+            logging.error(f"Failed to apply logging settings:\n{e}")
+            QMessageBox.critical(
+                self, "Logging", f"Failed to apply logging settings:\n{e}"
+            )
+
+
 class DatabaseAnalysisWidget(QWidget):
     """Database Analysis Widget for LMT-EYE.
     It allows to load a database, rebuild events and create reports.
@@ -314,7 +421,7 @@ class DatabaseAnalysisWidget(QWidget):
             utc_offset = local_time.utcoffset()
             utc_offset_name = local_time.tzname()
             if utc_offset is None:
-                print("Warning: UTC offset is None, setting to 0.")
+                logging.warning("Warning: UTC offset is None, setting to 0.")
                 utc_offset = pd.Timedelta(0)
                 utc_offset_str = "?"
             else:
@@ -409,7 +516,7 @@ class DatabaseAnalysisWidget(QWidget):
             settings = dlg.settings
             rebuild_only = dlg.rebuild_only
         else:
-            print("Process cancelled.")
+            logging.warning("Process cancelled.")
             return
 
         analyzer = DatabaseAnalyzer(self.database_path, settings)
@@ -434,7 +541,7 @@ class DatabaseAnalysisWidget(QWidget):
         progress_bar.show()
         self.threadpool.start(worker)
 
-        print(f"Process for {self.database_path.stem} queued/started.")
+        logging.info(f"Process for {self.database_path.stem} started.")
 
     def handle_open_analysis(self, analyzer: DatabaseAnalyzer | None):
         """Ask user if they want to open the processed results when the
@@ -442,10 +549,10 @@ class DatabaseAnalysisWidget(QWidget):
         Automatically close the window after 5 minutes if the user does not
         answer."""
         if analyzer is not None:
-            print("*** PROCESS FINISHED ***")
+            logging.info("*** PROCESS FINISHED ***")
 
             if analyzer.database_path is None:
-                print("Error: Analyzer has no database path.")
+                logging.error("Analyzer has no database path.")
                 return
 
             name = analyzer.database_path.stem
@@ -465,6 +572,7 @@ class DatabaseAnalysisWidget(QWidget):
             if dlg.exec():
                 analyzer.open_results()
         else:
+            logging.critical("Analysis failed.")
             QMessageBox.critical(self, "Processing", "Analysis failed.")
 
     def rebuild_only_finished(self, analyzer: DatabaseAnalyzer | None):
@@ -474,7 +582,7 @@ class DatabaseAnalysisWidget(QWidget):
         if analyzer is not None:
 
             if analyzer.database_path is None:
-                print("Error: Analyzer has no database path.")
+                logging.error("Analyzer has no database path.")
                 return
 
             text = (
@@ -487,7 +595,9 @@ class DatabaseAnalysisWidget(QWidget):
                 "Rebuild only",
                 text,
             )
+            logging.info("Rebuild only process finished.")
         else:
+            logging.critical("Rebuild failed.")
             QMessageBox.critical(self, "Rebuild only", "Rebuild failed.")
 
 
@@ -528,7 +638,7 @@ class AnalysisWorker(QRunnable):
             self.signals.analyzer.emit(self.data_analyzer)
 
         except Exception as e:
-            print(f"Error in AnalysisWorker: {e}")
+            logging.critical(f"AnalysisWorker failed to run.\nException: {e}")
             traceback.print_exc()
             self.signals.finished.emit(False)
 
@@ -797,7 +907,7 @@ class AnalysesComparisonWidget(QWidget):
         if not ok or not analysis_name:
             return
         self.analyses_path.remove(analysis_dict[analysis_name])
-        print(f"Removed analysis: {analysis_name}")
+        logging.info(f"Removed analysis: {analysis_name}")
         self.update_analyses_info()
 
         self.adjust_continue_btn_color()
@@ -820,7 +930,7 @@ class AnalysesComparisonWidget(QWidget):
         if settings_window.exec() == QDialog.DialogCode.Accepted:
             settings = settings_window.settings
         else:
-            print("Process cancelled.")
+            logging.warning("Process cancelled.")
             return
 
         progress_bar = AnalysesComparisonProgressBar(
@@ -841,9 +951,9 @@ class AnalysesComparisonWidget(QWidget):
         progress_bar.show()
         self.threadpool.start(worker)
 
-        print(
+        logging.info(
             f"Comparison process for {len(self.analyses_path)} "
-            "analyses queued/started."
+            "analyses started."
         )
 
     def handle_open_analysis(self, comparator: AnalysesComparator | None):
@@ -852,7 +962,7 @@ class AnalysesComparisonWidget(QWidget):
         Automatically close the window after 5 minutes if the user does not
         answer."""
         if comparator is not None:
-            print("*** PROCESS FINISHED ***")
+            logging.info("*** PROCESS FINISHED ***")
 
             output = comparator.get_output_folder()
             text = f"""
@@ -896,7 +1006,7 @@ class ComparisonWorker(QRunnable):
             self.signals.comparator.emit(self.data_comparator)
 
         except Exception as e:
-            print(f"Error in ComparisonWorker: {e}")
+            logging.critical(f"ComparisonWorker failed to run. Exception: {e}")
             traceback.print_exc()
             self.signals.finished.emit(False)
 

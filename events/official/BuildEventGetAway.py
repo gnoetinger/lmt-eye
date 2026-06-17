@@ -29,7 +29,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     ''' 
     parameters = getAnimalTypeParameters( animalType )
     
-    print("Escape")
+    logging.debug("Escape")
     
     ''' use the pool provided or create it'''
     if ( pool == None ):
@@ -48,7 +48,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                 continue
                         
             eventName = "Get away"        
-            print ( eventName )
+            logging.debug( eventName )
             
             getAwayTimeLine = EventTimeLine( None, eventName , animal , idAnimalB , None , None , loadEvent=False )
 
@@ -100,6 +100,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Get Away" , tmin=tmin, tmax=tmax )
 
              
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

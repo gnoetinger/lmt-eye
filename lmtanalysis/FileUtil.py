@@ -38,7 +38,7 @@ def getFilesToProcess():
     if ( d.num == 1):
         
         folder = askdirectory( title= "Choose a directory to process")
-        print ("Folder: " , folder )
+        print("Folder: " , folder )
         folder = folder+"/**/*.sqlite"
         print( "Fetching files...")
         files = []
@@ -222,15 +222,15 @@ def extractPValueFromLMMResult( result, keyword ):
     r = result.summary().as_text()
     for l in r.split("\n"):
         if keyword in l:
-            print (l)
+            print(l)
             lineWithoutSpace = ' '.join(l.split())
             pValue = float( lineWithoutSpace.split(" ")[-3] )
             sign = 1
             print( "test: " , lineWithoutSpace.split(" ")[-6] )
             if float( lineWithoutSpace.split(" ")[-6] ) < 0:
                 sign=-1
-            print ( "P VALUE :" , pValue )
-            print ( "SIGN :" , sign )
+            print( "P VALUE :" , pValue )
+            print( "SIGN :" , sign )
             return pValue, sign
 
 def getFigureBehaviouralEventsLabelsFrench(event):
@@ -580,6 +580,6 @@ class TestFileUtil ( unittest.TestCase ):
 
         files = getFilesToProcess()
         for file in files:
-            print ( file )
+            print( file )
         
         self.assertEqual( True, True )

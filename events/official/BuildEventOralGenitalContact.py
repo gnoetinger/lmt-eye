@@ -51,7 +51,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
             ''' MAX_DISTANCE_HEAD_HEAD_GENITAL_THRESHOLD '''
             
             eventName = "Oral-genital Contact"        
-            print ( eventName )
+            logging.debug( eventName )
             
             result ={}
             animalA = pool.animalDictionary.get( animal )
@@ -78,6 +78,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Oral Genital Contact" , tmin=tmin, tmax=tmax )
         
                    
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

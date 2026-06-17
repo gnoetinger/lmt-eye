@@ -2,6 +2,7 @@
 @author: xmousset
 """
 
+import logging
 import sqlite3
 from typing import Any, Callable
 from pathlib import Path
@@ -329,7 +330,7 @@ class DatabaseAnalyzer:
         if output_folder.is_dir():
             HTMLReportManager.open_local_output(output_folder)
         else:
-            print(f"Output folder not found: {output_folder}")
+            logging.error(f"Output folder not found: {output_folder}")
 
     def update_progression(
         self,

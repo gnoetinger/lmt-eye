@@ -3,6 +3,7 @@ Created on 20 dec. 2022
 
 @author: Fab
 """
+import logging
 
 from lmtanalysis.AnimalType import AnimalType
 from lmtanalysis.ParametersMouse import ParametersMouse
@@ -17,7 +18,7 @@ def getAnimalTypeParameters(animalType):
     if animalType == AnimalType.RAT:
         return ParametersRat()
 
-    print("Error: animal type is None")
+    logging.error("animal type is None")
     quit()
 
     return None

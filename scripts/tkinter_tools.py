@@ -1,3 +1,4 @@
+import logging
 import tkinter as tk
 from tkinter import filedialog
 
@@ -13,7 +14,7 @@ def select_sqlite_file():
     )
     root.destroy()
     if not file_str:
-        print("No file selected.")
+        logging.warning("No file selected.")
         return None
     return Path(file_str)
 
@@ -24,6 +25,6 @@ def select_folder():
     dir_str = filedialog.askdirectory(title="Select Folder")
     root.destroy()
     if not dir_str:
-        print("No folder selected.")
+        logging.warning("No folder selected.")
         return None
     return Path(dir_str)

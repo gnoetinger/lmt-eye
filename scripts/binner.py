@@ -2,8 +2,10 @@
 @author: xmousset
 """
 
-from sqlite3 import Connection
+import logging
+
 import pandas as pd
+from sqlite3 import Connection
 from typing import Any, Dict, List, Literal
 
 
@@ -83,10 +85,14 @@ class Binner:
             fps,
         )
 
-        print(f"Binner initialized with:")
-        print(f"last FRAMENUMBER: {self.db_last_frame}")
-        print(f"last TIMESTAMP: {self.db_last_timestamp}")
-        print(f"Experiment started at {self.frame_to_time(1)}")
+        logging.info(
+            f"Binner initialized: "
+            f"last FRAMENUMBER: {self.db_last_frame}, "
+            f"last TIMESTAMP: {self.db_last_timestamp}, "
+            f"experiment start: "
+            f"{self.frame_to_time(1).strftime('%Y-%m-%d %H:%M:%S')}, "
+            f"UTC offset: {self.utc_offset}"
+        )
 
     def frame_to_time(self, framenumber: int) -> pd.Timestamp:
         """Convert a frame number to a pandas Timestamp."""
@@ -283,6 +289,11 @@ class Binner:
         bin_iterator: List[tuple[int, int]] = []
         for start, end in zip(frames_start, frames_end):
             bin_iterator.append((start, end))
+            
+        logging.debug(
+            f"Bin iterator: {len(bin_iterator)} bins "
+            f"between frames {self.limits[0]} and {self.limits[1]}."
+        )
 
         return bin_iterator
 
@@ -310,5 +321,16 @@ class Binner:
             else:
                 chunked_iterator.append([bin])
                 chunk_start = bin[0]
+
+        logging.debug(
+            f"Bin iterator split in {len(chunked_iterator)} chunks "
+            f"of size {chunk_size} frames."
+        )
+        logging.debug(
+            f"Chunks: {[
+                (chunk[0][0], chunk[-1][1])
+                for chunk in chunked_iterator
+            ]}"
+        )
 
         return chunked_iterator

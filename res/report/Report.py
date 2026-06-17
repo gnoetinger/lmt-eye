@@ -5,6 +5,8 @@ Created on 5 févr. 2025
 '''
 
 import os
+import logging
+from typing import Any
 
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
@@ -21,14 +23,14 @@ class Report(object):
 
     def __init__(self , title, data, template="contentCard.html", experimentName="main",  style = "primary", options= {} ):
         
-        self.title = title
-        self.data = data
-        self.template = template
-        self.experimentName = experimentName
-        self.style = style # can be: primary, success, danger, warning
-        self._errorLevel = 0 # override the style if different from 0. 1: warning, 2:danger
-        self.options = options
-        self.downloadableContent = {} # to add dataframe or files that will be available for download. Key is the name of the link on the webpage. 
+        self.title: str = title
+        self.data: Any = data
+        self.template: str = template
+        self.experimentName: str = experimentName
+        self.style: str = style # can be: primary, success, danger, warning
+        self._errorLevel: int = 0 # override the style if different from 0. 1: warning, 2:danger
+        self.options: dict = options
+        self.downloadableContent: dict[str, Any] = {} # to add dataframe or files that will be available for download. Key is the name of the link on the webpage. 
     
     def __str__(self, *args, **kwargs):
         return f"Report {self.title} - {self.experimentName}"
@@ -55,7 +57,7 @@ class Report(object):
         
     def render(self , templateFolder, outFolder=None, reportList=None ):
 
-        print(f"Rendering {self.experimentName} - {self.title} - {self.template}")
+        logging.debug(f"Rendering {self.experimentName} - {self.title} - {self.template}")
         env = Environment(loader=FileSystemLoader(templateFolder))
         
         numberInTitle = ""
@@ -68,7 +70,7 @@ class Report(object):
 
         if self.template == "table.html":
             if outFolder == None:
-                print("Error: This export needs outFolder")
+                logging.error("This export needs outFolder")
                 quit()
                 
             df = self.data
@@ -76,7 +78,7 @@ class Report(object):
             s = clean_filename( s )
             fileNameXLS = f"{s}.xlsx"
             df.to_excel( f"{outFolder}/{fileNameXLS}" )
-            print(f"Xlsx file is : {fileNameXLS}")
+            logging.debug(f"Xlsx file is : {fileNameXLS}")
             render = env.get_template( self.template ).render( title=numberInTitle+self.title, content=self.data, fileNameXLS=fileNameXLS, style=self.style, **self.options )
             
             
@@ -92,11 +94,11 @@ class Report(object):
                 s = clean_filename( s )
                 fileNameXLS = f"{s}.xlsx"
                 df.to_excel( f"{outFolder}/{fileNameXLS}" )
-                print(f"Xlsx file is : {fileNameXLS}")
+                logging.debug(f"Xlsx file is : {fileNameXLS}")
                 extraDownloadContent+=f"<a href='{fileNameXLS}' >{k}</a><br>"
             else:
-                print(f"Report rendering, downloadableContent: Can't process data of type {type(v)}")
-                print( v )
+                logging.error(f"Report rendering, downloadableContent: Can't process data of type {type(v)}")
+                logging.error( v )
                 quit()
         
         

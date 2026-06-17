@@ -28,7 +28,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
     '''
     Nest 3
     ''' 
-    print("[NEST 3] : Assume that there is no occlusion, does not work with anonymous animals")
+    logging.debug("[NEST 3] : Assume that there is no occlusion, does not work with anonymous animals")
     
     parameters = getAnimalTypeParameters( animalType )
     
@@ -38,7 +38,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
         pool.loadDetection( start = tmin, end = tmax , lightLoad=True )
         
     if ( len ( pool.getAnimalList() ) != 4 ):
-        print( "[NEST3 Cancelled] 4 animals are required to build nest3.")
+        logging.debug( "[NEST3 Cancelled] 4 animals are required to build nest3.")
         return
     
     contact = {}
@@ -82,10 +82,10 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
                 nbAnimalAtT+=1
                 animalDetectedList.append( animal )
         
-        #print( str(t) + " : " + str( nbAnimalAtT ) )
+        #logging.debug( str(t) + " : " + str( nbAnimalAtT ) )
                     
     
-        #print("TEST")
+        #logging.debug("TEST")
         graph = nx.Graph()
         # add nodes
         for animal in animalDetectedList:
@@ -100,7 +100,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
         # check with anonymous detection. Check contact
         if anonymousDetectionList!= None:
             # manage anonymous
-            # print( t , "manage anonymous")
+            # logging.debug( f"{t} : manage anonymous" )
             '''
             # load all masks
             for animal in animalDetectedList:
@@ -114,7 +114,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
                         if distance != None:
                             if distance < parameters.DISTANCE_CONTACT_MASS_CENTER:
                                 graph.add_edge( detectionA, detectionB )
-                                # print("Adding edge with mask (det anonymous to det anonymous)")
+                                # logging.debug("Adding edge with mask (det anonymous to det anonymous)")
                     
             for detection in anonymousDetectionList:
                 for animal in animalDetectedList:
@@ -123,7 +123,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
                         if distance < parameters.DISTANCE_CONTACT_MASS_CENTER:
                             #if detection.getMask().isInContactWithMask( animal.getDetectionAt ( t ).getMask() ):
                             graph.add_edge( animal, detection )
-                            # print("Adding edge with mask")
+                            # logging.debug("Adding edge with mask")
         
         # list of CC from the biggest to the smallest
         listCC = sorted(nx.connected_components( graph ), key=len, reverse=True)
@@ -162,6 +162,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
           
     
 
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

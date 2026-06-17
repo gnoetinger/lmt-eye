@@ -111,7 +111,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                 continue
             
             eventName = "Side by side Contact, opposite way"        
-            print ( eventName )
+            logging.debug( eventName )
             
             result ={}
             animalA = pool.animalDictionary.get( animal )
@@ -140,6 +140,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t.addLog( "Build Event Side by side opposite" , tmin=tmin, tmax=tmax )
         
                    
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

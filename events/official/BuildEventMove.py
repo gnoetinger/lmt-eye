@@ -34,7 +34,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     pool.loadAnimals( connection )
 
     if len(pool.animalDictionary.keys()) == 1:
-        print('Only one animal in database.')
+        logging.debug('Only one animal in database.')
         '''if the animal has been tested alone, only the move isolated event will be computed.'''
         moveSourceTimeLine = {}
 
@@ -62,7 +62,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
 
 
     else:
-        print('More than one animal in database.')
+        logging.debug('More than one animal in database.')
         isInContactSourceDictionary = {}
         moveSourceTimeLine = {}
         moveIsolatedTimeLine = {}
@@ -81,7 +81,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
             ''' load contact dictionary with another animal '''
             for animalB in pool.animalDictionary.keys():
                 if animal == animalB:
-                    print('Same identity')
+                    logging.debug('Same identity')
                     continue
                 else:
                     isInContactSourceDictionary[(animal, animalB)] = EventTimeLineCached( connection, file, "Contact", animal, animalB, minFrame=tmin, maxFrame=tmax ).getDictionary()
@@ -96,7 +96,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                 framesToRemoveFromMoveIsolatedTimeLine = []
                 moveSocialResult = {}
                 if animal == animalB:
-                    print('Same identity')
+                    logging.debug('Same identity')
                     continue
                 else:
                     ''' loop over eventlist'''
@@ -129,6 +129,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t = TaskLogger( connection )
     t.addLog( "Build Event Move" , tmin=tmin, tmax=tmax )
                        
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

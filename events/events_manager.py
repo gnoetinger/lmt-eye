@@ -4,8 +4,9 @@
 @author: xmousset
 """
 
-from pathlib import Path
+import logging
 import importlib.util
+from pathlib import Path
 from types import ModuleType
 
 from events.official import (
@@ -111,12 +112,12 @@ def _load_custom_events() -> dict[str, ModuleType]:
         value.
         Example: {"Speed": <module>, "Rearing": <module>, ...}
     """
-    print("Loading custom events...")
+    logging.info("Loading custom events...")
     custom_events_dir = Path(__file__).parent / "custom"
     events_dict: dict[str, ModuleType] = {}
 
     if not custom_events_dir.exists():
-        print(f"Warning: {custom_events_dir} does not exist")
+        logging.warning(f"{custom_events_dir} does not exist.")
         return events_dict
 
     # Iterate through all .py files in events/custom
@@ -136,16 +137,18 @@ def _load_custom_events() -> dict[str, ModuleType]:
             if hasattr(module, "EVENTS_NAME"):
                 for event_name in module.EVENTS_NAME:
                     events_dict[event_name] = module
-                    print(f"✓ {event_name}")
+                    logging.info(f"✓ {event_name}")
             else:
-                print(
-                    f"⚠ Warning: {file_path.name} has no EVENTS_NAME attribute"
+                logging.warning(
+                    f"⚠ {file_path.name} has no EVENTS_NAME attribute"
                 )
 
         except Exception as e:
-            print(f"✗ Loading error: {file_path.name}\n{e}")
+            logging.error(f"✗ Loading error: {file_path.name}\nException: {e}")
 
-    print(f"Finished loading custom events. Total loaded: {len(events_dict)}")
+    logging.info(
+        f"Finished loading custom events. Total loaded: {len(events_dict)}"
+    )
     return events_dict
 
 

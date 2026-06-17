@@ -2,6 +2,7 @@
 @author: xmousset
 """
 
+import logging
 from typing import List
 
 import pandas as pd
@@ -329,7 +330,7 @@ def get_event_card(
     max-width: 400px;"> <div style="margin:0; padding:0;">
     """
     for event in event_list:
-        print(event)
+        logging.debug(f"Creating event card for: {event}")
         mean_count = round(
             df[df["EVENT"] == event]["EVENT_COUNT"].sum()
             / NB_ANIMALS

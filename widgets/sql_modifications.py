@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 import numpy as np
 import pandas as pd
@@ -297,7 +298,9 @@ class UpdateDatabaseInfo(QDialog):
                     match_col = "RFID"
                     match_val = row["RFID"]
                 else:
-                    print(f"Skipping row with no valid ID or RFID: {row}")
+                    logging.warning(
+                        f"Skipping row with no valid ID or RFID: {row}"
+                    )
                     continue
 
                 set_clause = ", ".join([f"{col}=?" for col in update_cols])

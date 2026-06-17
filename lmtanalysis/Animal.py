@@ -3,6 +3,7 @@ Created on 7 sept. 2017
 @author: Fab
 """
 
+import logging
 from typing import Any, Dict, List
 from lmtanalysis.Detection import *
 
@@ -84,16 +85,16 @@ class Animal:
         self.animalType = animalType
 
         if self.animalType == AnimalType.MOUSE:
-            print("Animal type = MOUSE")
+            logging.debug("Animal type = MOUSE")
             self.parameters = ParametersMouse()
 
         if self.animalType == AnimalType.RAT:
-            print("Animal type = RAT")
+            logging.debug("Animal type = RAT")
             self.parameters = ParametersRat()
 
         if self.parameters == None:
             self.parameters = ParametersMouse()
-            print("Animal's type is set to Mouse by default rat compatibility")
+            logging.warning("Animal's type set to Mouse by default")
 
     def setGenotype(self, genotype):
         self.genotype = genotype
@@ -135,7 +136,7 @@ class Animal:
         """
         lightLoad only loads massX and massY to speed up the load. Then one can only compute basic features such as global speed of the animals
         """
-        print(self.__str__(), ": Loading detection.")
+        logging.debug(f"{self.__str__()}: Loading detection.")
         chrono = Chronometer("Load detection")
 
         self.detectionDictionary.clear()
@@ -156,8 +157,8 @@ class Animal:
         if end != None:
             query += " AND FRAMENUMBER<={}".format(end)
 
-        print(query)
-        print(self.conn)
+        logging.debug(query)
+        logging.debug(self.conn)
         cursor.execute(query)
 
         rows = cursor.fetchall()
@@ -207,11 +208,9 @@ class Animal:
 
             self.detectionDictionary[frameNumber] = detection
 
-        print(
-            self.__str__(),
-            " ",
-            len(self.detectionDictionary),
-            " detections loaded in {} seconds.".format(chrono.getTimeInS()),
+        logging.debug(
+            f"{self.__str__()} {len(self.detectionDictionary)} detections "
+            f"loaded in {chrono.getTimeInS()} seconds."
         )
 
     def loadMask(self, frame):
@@ -231,7 +230,7 @@ class Animal:
             if not a.isHeadAndTailDetected():
                 self.detectionDictionary.pop(key)
                 nbRemoved += 1
-        print(
+        logging.info(
             "Filtering head tail detection. number of detection removed:",
             nbRemoved,
         )
@@ -260,7 +259,7 @@ class Animal:
                 self.detectionDictionary.pop(key)
                 nbRemoved += 1
 
-        print(
+        logging.info(
             "Filtering Instant speed min:",
             minSpeed,
             "max:",
@@ -291,7 +290,9 @@ class Animal:
                 self.detectionDictionary.pop(key)
                 nbRemoved += 1
 
-        print("Filtering area, number of detection removed:", nbRemoved)
+        logging.debug(
+            f"Filtering area, number of detection removed: {nbRemoved}"
+        )
 
     def filterDetectionByDistanceToPoint(self, x1, y1, maxDistance):
         """
@@ -319,7 +320,7 @@ class Animal:
                 self.detectionDictionary.pop(key)
                 nbRemoved += 1
 
-        print(
+        logging.info(
             "Filtering by distance to point, number of detection removed:",
             nbRemoved,
         )
@@ -340,7 +341,9 @@ class Animal:
                 self.detectionDictionary.pop(key)
                 nbRemoved += 1
 
-        print("Filtering area, number of detection removed:", nbRemoved)
+        logging.info(
+            f"Filtering area, number of detection removed: {nbRemoved}"
+        )
 
     def clearDetection(self):
 
@@ -370,14 +373,14 @@ class Animal:
 
         for key in keyList:
 
-            # print ( "key:", key, "value", self.getSpeed( key ) , "previous:" , previousKey )
+            # logging.debug ( f"key: {key}, value: {self.getSpeed( key )}, previous: {previousKey}" )
 
             if previousKey + 1 != key:
                 xList.append([np.nan, np.nan])
                 yList.append([np.nan, np.nan])
                 previousKey = key
 
-                # print("break previous")
+                # logging.debug("break previous")
                 continue
             previousKey = key
 
@@ -385,13 +388,13 @@ class Animal:
             if a == None:
                 xList.append([np.nan, np.nan])
                 yList.append([np.nan, np.nan])
-                # print("break none A")
+                # logging.debug("break none A")
                 continue
             b = self.detectionDictionary.get(key + 1)
             if b == None:
                 xList.append([np.nan, np.nan])
                 yList.append([np.nan, np.nan])
-                # print("break none B")
+                # logging.debug("break none B")
                 continue
 
             xList.append([a.massX, b.massX])
@@ -453,14 +456,14 @@ class Animal:
 
         for key in keyList:
 
-            # print ( "key:", key, "value", self.getSpeed( key ) , "previous:" , previousKey )
+            # logging.debug ( f"key: {key}, value: {self.getSpeed( key )}, previous: {previousKey}" )
 
             if previousKey + 1 != key:
                 xList.append([np.nan, np.nan])
                 yList.append([np.nan, np.nan])
                 previousKey = key
 
-                # print("break previous")
+                # logging.debug("break previous")
                 continue
             previousKey = key
 
@@ -468,13 +471,13 @@ class Animal:
             if a == None:
                 xList.append([np.nan, np.nan])
                 yList.append([np.nan, np.nan])
-                # print("break none A")
+                # logging.debug("break none A")
                 continue
             b = self.detectionDictionary.get(key + 1)
             if b == None:
                 xList.append([np.nan, np.nan])
                 yList.append([np.nan, np.nan])
-                # print("break none B")
+                # logging.debug("break none B")
                 continue
 
             xa = a.frontX
@@ -497,7 +500,7 @@ class Animal:
         self, show=True, color="k", maskingEventTimeLine=None, title=""
     ):
 
-        print("Draw trajectory of animal " + self.name)
+        logging.info(f"Draw trajectory of animal {self.name}")
 
         xList, yList = self.getTrajectoryData(maskingEventTimeLine)
 
@@ -519,7 +522,7 @@ class Animal:
 
     def plotTrajectory3D(self):
 
-        print("Draw 3D trajectory")
+        logging.info("Draw 3D trajectory")
         keyList = sorted(self.detectionDictionary.keys())
 
         mpl.rcParams["legend.fontsize"] = 10
@@ -534,10 +537,10 @@ class Animal:
         y = r * np.cos(theta)
 
         """
-        print ( z )
-        print ( r )
-        print ( x )
-        print ( y )
+        logging.debug ( z )
+        logging.debug ( r )
+        logging.debug ( x )
+        logging.debug ( y )
         """
 
         xList = []
@@ -636,20 +639,29 @@ class Animal:
             msg = "filtered"
         else:
             msg = "total"
-        print(
-            f"Compute {msg} distance between frames {minFrame} and {maxFrame}"
+        logging.debug(
+            f"Compute {msg} distance per bin between frames "
+            f"{minFrame} and {maxFrame}"
         )
 
         flicker_frames = {}
         if filter_flickering:
             flicker_frames = EventTimeLine(
-                conn=self.conn, eventName="Flickering", idA=self.baseId
+                conn=self.conn,
+                eventName="Flickering",
+                idA=self.baseId,
+                minFrame=minFrame,
+                maxFrame=maxFrame,
             ).getDictionary()
 
         stop_frames = {}
         if filter_stop:
             stop_frames = EventTimeLine(
-                conn=self.conn, eventName="Stop", idA=self.baseId
+                conn=self.conn,
+                eventName="Stop",
+                idA=self.baseId,
+                minFrame=minFrame,
+                maxFrame=maxFrame,
             ).getDictionary()
 
         filters_frames = flicker_frames | stop_frames
@@ -696,23 +708,39 @@ class Animal:
         """
         if tmax is None:
             tmax = self.getMaxDetectionT()
+            if tmax is None:
+                logging.warning(
+                    f"No detection found for animal {self.baseId}. "
+                    f"Returning distance as 0."
+                )
+                return 0.0
 
         if filter_flickering or filter_stop:
             msg = "filtered"
         else:
             msg = "total"
-        print(f"Compute {msg} distance between frames {tmin} and {tmax}")
+        logging.info(
+            f"Compute {msg} distance between frames {tmin} and {tmax}"
+        )
 
         flicker_frames = {}
         if filter_flickering:
             flicker_frames = EventTimeLine(
-                conn=self.conn, eventName="Flickering", idA=self.baseId
+                conn=self.conn,
+                eventName="Flickering",
+                idA=self.baseId,
+                minFrame=tmin,
+                maxFrame=tmax,
             ).getDictionary()
 
         stop_frames = {}
         if filter_stop:
             stop_frames = EventTimeLine(
-                conn=self.conn, eventName="Stop", idA=self.baseId
+                conn=self.conn,
+                eventName="Stop",
+                idA=self.baseId,
+                minFrame=tmin,
+                maxFrame=tmax,
             ).getDictionary()
 
         filters_frames = flicker_frames | stop_frames
@@ -819,7 +847,10 @@ class Animal:
             msg = "filtered"
         else:
             msg = "total"
-        print(f"Compute {msg} speed between frames {minFrame} and {maxFrame}")
+        logging.debug(
+            f"Compute {msg} speed per bin between frames "
+            f"{minFrame} and {maxFrame}"
+        )
 
         flicker_frames = {}
         if filter_flickering:
@@ -926,7 +957,7 @@ class Animal:
         for key in keyList:
 
             if key <= tmin or key >= tmax:
-                # print ( 1 )
+                # logging.debug ( 1 )
                 continue
 
             a = self.detectionDictionary.get(
@@ -1018,11 +1049,10 @@ class Animal:
         distanceList = []
         t = startFrame
         while t < endFrame:
-            print(t)
             distanceBin = self.getMeanDistanceTo(
                 t, t + binFrameSize, animalB
             )  # computed in cm already
-            print("Distance bin n:{} value:{}".format(t, distanceBin))
+            logging.debug(f"Distance bin t:{t} value:{distanceBin}")
             distanceList.append(distanceBin)
             t = t + binFrameSize
 
@@ -1099,7 +1129,7 @@ class Animal:
                 bodySizeList.append(a.getBodySize())
 
         mean = np.nanmean(bodySizeList)
-        print("mean animal bodysize: ", mean)
+        logging.info(f"mean animal bodysize: {mean}")
 
         self.meanBodyLength = mean
 
@@ -1175,10 +1205,10 @@ class Animal:
             massHeightList.append(a.massZ)
 
         decile = 7 * len(massHeightList) / 10
-        print("7eme decile mass:")
-        print(decile)
-        print("arrondi massZ:")
-        print(math.ceil(decile) - 1)
+        logging.debug("7eme decile mass:")
+        logging.debug(decile)
+        logging.debug("arrondi massZ:")
+        logging.debug(math.ceil(decile) - 1)
 
         self.eightDecileMassHeight = sorted(massHeightList)[
             math.ceil(decile) - 1
@@ -1207,10 +1237,10 @@ class Animal:
             frontHeightList.append(a.frontZ)
 
         decile = 7 * len(frontHeightList) / 10
-        print("7eme decile front:")
-        print(decile)
-        print("arrondi frontZ:")
-        print(math.ceil(decile) - 1)
+        logging.debug("7eme decile front:")
+        logging.debug(decile)
+        logging.debug("arrondi frontZ:")
+        logging.debug(math.ceil(decile) - 1)
 
         self.eightDecileFrontHeight = sorted(frontHeightList)[
             math.ceil(decile) - 1
@@ -1251,7 +1281,7 @@ class Animal:
 
         for t in range(tmin, tmax + 1):
             speed = self.getSpeed(t)
-            # print('speed: ', speed)
+            # logging.debug(f"speed: {speed}")
             if speed != None:
                 sum += speed
                 speedList.append(speed)
@@ -1282,7 +1312,9 @@ class Animal:
         return verticalSpeed
 
     def getSap(self, tmin=0, tmax=None, xa=None, ya=None, xb=None, yb=None):
-        print("Compute number of frames in SAP in specific zone of the cage")
+        logging.info(
+            "Compute number of frames in SAP in specific zone of the cage"
+        )
 
         self.getBodyThreshold()
         self.getMedianBodyHeight()
@@ -1299,7 +1331,7 @@ class Animal:
         for key in keyList:
 
             if key <= tmin or key >= tmax:
-                # print ( 1 )
+                # logging.debug ( 1 )
                 continue
 
             detection = self.detectionDictionary.get(key)
@@ -1310,12 +1342,12 @@ class Animal:
                 or detection.massY > yb
                 or detection.massZ > self.medianBodyHeight
             ):
-                # print ( 2 )
+                # logging.debug ( 2 )
                 continue
 
             speed = self.getSpeed(key)
             if speed == None:
-                # print ( 3 )
+                # logging.debug ( 3 )
                 continue
 
             if (
@@ -1323,7 +1355,7 @@ class Animal:
                 and speed < self.parameters.SPEED_THRESHOLD_LOW
                 and detection.massZ < self.medianBodyHeight
             ):
-                # print ( 4 )
+                # logging.debug ( 4 )
                 sapList.append(detection)
 
         return sapList
@@ -1381,7 +1413,7 @@ class Animal:
         for key in keyList:
 
             if key <= tmin or key >= tmax:
-                # print ( 1 )
+                # logging.debug ( 1 )
                 continue
 
             detection = self.detectionDictionary.get(key)
@@ -1391,7 +1423,7 @@ class Animal:
                 or detection.massY < y1
                 or detection.massY > y2
             ):
-                # print ( 2 )
+                # logging.debug ( 2 )
                 continue
 
             count += 1
@@ -1399,7 +1431,7 @@ class Animal:
         return count
 
     def plotDistance(self, color="k", show=True):
-        print("Plot distance")
+        logging.info("Plot distance")
         keyList = sorted(self.detectionDictionary.keys())
 
         tList = []
@@ -1455,7 +1487,7 @@ class Animal:
         cursor.close()
 
         if len(rows) != 1:
-            # print ("unexpected number of row: " , str( len(rows ) ) )
+            # logging.debug (f"unexpected number of row: {len(rows)}")
             return None
 
         row = rows[0]
@@ -1495,7 +1527,7 @@ class AnimalPool:
 
     def loadAnimals(self, conn):
 
-        print("Loading animals.")
+        logging.debug("Loading animals.")
 
         cursor = conn.cursor()
         self.conn = conn
@@ -1504,17 +1536,17 @@ class AnimalPool:
 
         """
         try:
-            print( "Checking animal type.")
+            logging.debug( "Checking animal type.")
             query = "SELECT * FROM EXPERIMENT"
-            print("2")
+            logging.debug("2")
             cursor.execute( query )
-            print("3")
+            logging.debug("3")
             rows = cursor.fetchall()
-            print("4")
-            print( rows )
+            logging.debug("4")
+            logging.debug( rows )
             for row in rows:
-                print("test -- sdlqsfhldjk")
-                print( str(row[1]).lower() )
+                logging.debug("test -- sdlqsfhldjk")
+                logging.debug( str(row[1]).lower() )
                 if ( "rat" in str(row[1]).lower() ):
                     animalType = AnimalType.RAT
                     
@@ -1523,14 +1555,14 @@ class AnimalPool:
         
             
         except:
-            print("Failed to load experiment data. Mouse by default.")
+            logging.debug("Failed to load experiment data. Mouse by default.")
         """
 
         # Check the number of row available in base
         query = "SELECT * FROM ANIMAL"
         cursor.execute(query)
         field_names = [i[0] for i in cursor.description]
-        print("Fields available in lmtanalysis: ", field_names)
+        logging.debug(f"Fields available in lmtanalysis: {field_names}")
 
         # OLD VERSION # build query
         # query = "SELECT "
@@ -1553,12 +1585,12 @@ class AnimalPool:
         #         query += "ID,RFID,NAME,GENOTYPE,AGE,SEX,STRAIN,SETUP,TREATMENT"
 
         # query += " FROM ANIMAL ORDER BY GENOTYPE"
-        # print("SQL Query: " + query)
+        # logging.debug("SQL Query: " + query)
 
         # NEW VERSION # Build dynamic query with available fields
         available_fields = ", ".join(field_names)
         query = f"SELECT {available_fields} FROM ANIMAL ORDER BY GENOTYPE"
-        print(f"SQL Query: {query}")
+        logging.debug(f"SQL Query: {query}")
 
         cursor.execute(query)
         rows = cursor.fetchall()
@@ -1604,9 +1636,9 @@ class AnimalPool:
 
             if animal != None:
                 self.animalDictionary[animal.baseId] = animal
-                print(animal)
+                logging.debug(animal)
             else:
-                print("Animal loader : error while loading animal.")
+                logging.error("Animal loader : error while loading animal.")
 
     def getAnonymousDetection(self, frame):
         if frame not in self.anonymousDetection:
@@ -1633,7 +1665,7 @@ class AnimalPool:
         if end != None:
             query += " AND FRAMENUMBER<={}".format(end)
 
-        print(query)
+        logging.debug(query)
         cursor.execute(query)
 
         rows = cursor.fetchall()
@@ -1657,7 +1689,7 @@ class AnimalPool:
 
             self.anonymousDetection[frameNumber].append(detection)
 
-        print(
+        logging.info(
             len(self.anonymousDetection),
             " frames containing anonymous detections loaded in {} seconds.".format(
                 chrono.getTimeInS()
@@ -1702,7 +1734,7 @@ class AnimalPool:
         cursor.close()
 
         if len(rows) != 1:
-            # print ("unexpected number of row: " , str( len(rows ) ) )
+            # logging.debug(f"unexpected number of row: {len(rows)}")
             return None
 
         row = rows[0]
@@ -1756,16 +1788,18 @@ class AnimalPool:
         xMax = parameters.cornerCoordinatesOpenFieldArea[1][0]
         yMin = parameters.cornerCoordinatesOpenFieldArea[0][1]
         yMax = parameters.cornerCoordinatesOpenFieldArea[3][1]
-        print(xMin, xMax, yMin, yMax)
+        logging.debug(
+            f"xMin: {xMin}, xMax: {xMax}, yMin: {yMin}, yMax: {yMax}"
+        )
 
         widthPixel = xMax - xMin
         heightPixel = yMax - yMin
-        print(widthPixel, heightPixel)
+        logging.debug(f"widthPixel: {widthPixel}, heightPixel: {heightPixel}")
 
         xDetection = xMin + (widthPixel / 50.0) * xCm
         yDetection = yMin + (heightPixel / 50.0) * yCm
 
-        print(xDetection, yDetection)
+        logging.debug(f"xDetection: {xDetection}, yDetection: {yDetection}")
 
         # xDetection = ( xCm - parameters.cornerCoordinatesOpenFieldArea[0][0] )* parameters.scaleFactor
         # yDetection = ( yCm - parameters.cornerCoordinatesOpenFieldArea[0][1] )* parameters.scaleFactor
@@ -1847,7 +1881,7 @@ class AnimalPool:
         """
         plots data for temperature
         """
-        print("plotting sensor data. ", sensor)
+        logging.info(f"plotting sensor data. {sensor}")
         cursor = self.conn.cursor()
 
         # Check the number of row available in base
@@ -1855,7 +1889,7 @@ class AnimalPool:
         try:
             cursor.execute(query)
         except:
-            print("plot sensor data: can't access data for ", sensor)
+            logging.error(f"plot sensor data: can't access data for {sensor}")
             return
 
         rows = cursor.fetchall()
@@ -1953,7 +1987,7 @@ class AnimalPool:
                         if end - start > 300:
                             autoNightList.append((start, end))
                         else:
-                            print(
+                            logging.warning(
                                 "Skipping very short night phase. (less than 10 seconds)"
                             )
                         start = None
@@ -1999,14 +2033,14 @@ class AnimalPool:
             plt.ylabel("Visible and infrared light (indice)")
 
         if saveFile != None:
-            print("Saving figure : " + saveFile)
+            logging.info("Saving figure : " + saveFile)
             fig.savefig(saveFile, dpi=100)
 
         """
-        print("TEST 1")
+        logging.debug("TEST 1")
         import os
         os.startfile( saveFile, 'open')
-        print( "TEST 2")
+        logging.debug( "TEST 2")
         """
 
         if show:
@@ -2047,7 +2081,7 @@ class AnimalPool:
         ax.xaxis.set_minor_locator(ticker.MultipleLocator(30 * 60 * 60))
 
         if saveFile != None:
-            print("Saving figure : " + saveFile)
+            logging.info("Saving figure : " + saveFile)
             fig.savefig(saveFile, dpi=100)
 
         if show:
@@ -2055,7 +2089,7 @@ class AnimalPool:
         plt.close()
 
     def buildSensorData(self, file, show=False):
-        print("Build sensor data")
+        logging.info("Build sensor data")
         # self.plotNight( show = show, saveFile = file+"_day night.pdf" )
         self.plotSensorData(
             sensor="TEMPERATURE",
@@ -2101,7 +2135,7 @@ class AnimalPool:
         saveFile=None,
     ):
 
-        print("AnimalPool: plot trajectory.")
+        logging.info("AnimalPool: plot trajectory.")
         nbCols = len(self.getAnimalList()) + 1
         fig, axes = plt.subplots(
             nrows=1,
@@ -2119,9 +2153,9 @@ class AnimalPool:
         legendList = []
         for animal in self.getAnimalList():
 
-            print("Compute trajectory of animal " + animal.name)
+            logging.info("Compute trajectory of animal " + animal.name)
             xList, yList = animal.getTrajectoryData(maskingEventTimeLine)
-            print("Draw trajectory of animal " + animal.name)
+            logging.info("Draw trajectory of animal " + animal.name)
             if scatter == True:
                 axis.scatter(
                     xList,
@@ -2156,9 +2190,9 @@ class AnimalPool:
 
             legendList = []
 
-            print("Compute trajectory of animal " + animal.name)
+            logging.info("Compute trajectory of animal " + animal.name)
             xList, yList = animal.getTrajectoryData(maskingEventTimeLine)
-            print("Draw trajectory of animal " + animal.name)
+            logging.info("Draw trajectory of animal " + animal.name)
             if scatter == True:
                 axis.scatter(
                     xList,
@@ -2188,7 +2222,7 @@ class AnimalPool:
         fig.suptitle(title)
 
         if saveFile != None:
-            print("Saving figure : " + saveFile)
+            logging.info("Saving figure : " + saveFile)
             fig.savefig(saveFile, dpi=100)
 
         if show:
@@ -2219,7 +2253,7 @@ class AnimalPool:
             start, end
         )
 
-        print("SQL Query: " + query)
+        logging.debug("SQL Query: " + query)
 
         cursor = self.conn.cursor()
         cursor.execute(query)

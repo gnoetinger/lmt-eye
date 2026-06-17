@@ -29,9 +29,9 @@ eventName = "FollowZone"
             
 def flush( connection ):
     ''' flush event in database '''
-    print("Flushing " , eventName )
+    logging.info(f"Flushing {eventName}")
     deleteEventTimeLineInBase(connection, eventName )
-    print("Flushing " , "FollowZone Isolated" )
+    logging.info("Flushing FollowZone Isolated")
     deleteEventTimeLineInBase(connection, "FollowZone Isolated"  )
 
 
@@ -140,7 +140,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     contactDic = {}    
     oralGenitalDic = {}
     for idAnimalA in pool.animalDictionary:
-        print(pool.animalDictionary[idAnimalA])
+        logging.debug(f"Processing animal with baseId: {idAnimalA}")
         for idAnimalB in pool.animalDictionary:
             if( idAnimalA == idAnimalB ):
                 continue
@@ -216,7 +216,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t = TaskLogger( connection )
     t.addLog( eventName , tmin=tmin, tmax=tmax )
               
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
     return
     
             

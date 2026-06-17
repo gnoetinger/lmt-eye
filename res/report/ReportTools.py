@@ -7,6 +7,7 @@ code from https://gist.github.com/wassname/1393c4a57cfcbf03641dbc31886123b8
 
 '''
 
+import logging
 import unicodedata
 import string
 
@@ -37,7 +38,7 @@ def clean_filename(filename, whitelist=valid_filename_chars, replace=' '):
     # keep only whitelisted chars
     cleaned_filename = ''.join(c for c in cleaned_filename if c in whitelist)
     if len(cleaned_filename)>char_limit:
-        print("Warning, filename truncated because it was over {}. Filenames may no longer be unique".format(char_limit))
+        logging.warning(f"filename truncated because it was over {char_limit}. Filenames may no longer be unique")
     return cleaned_filename[:char_limit] 
 
 

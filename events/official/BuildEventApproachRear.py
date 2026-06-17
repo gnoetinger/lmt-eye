@@ -58,7 +58,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
                 continue
             
             eventName = "Approach rear"        
-            print ( eventName )
+            logging.debug( eventName )
             
             appRearTimeLine = EventTimeLine( None, eventName , animal , idAnimalB , None , None , loadEvent=False )
             
@@ -89,6 +89,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
     t.addLog( "Build Event Approach Rear" , tmin=tmin, tmax=tmax )
 
        
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

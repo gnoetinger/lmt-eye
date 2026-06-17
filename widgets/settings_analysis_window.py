@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import pandas as pd
@@ -49,7 +50,7 @@ class AnalysisSettingsWindow(QDialog):
         if default_path.is_file():
             settings.load(default_path)
         else:
-            print("Warning: 'default_settings.json' not found.")
+            logging.info("No default settings set by user.")
 
         return settings
 
@@ -104,7 +105,7 @@ class AnalysisSettingsWindow(QDialog):
         if current_type in options:
             self.animal_type_box.setCurrentText(current_type)
         else:
-            print(f"Animal type '{current_type}' is not available.")
+            logging.warning(f"Animal type '{current_type}' is not available.")
             self.animal_type_box.setCurrentText("ERROR")
 
         # row layout
@@ -521,11 +522,7 @@ class AnalysisSettingsWindow(QDialog):
         # ================ PROCESSING LIMITS (start, end) ================
 
         # processing_limits (start)
-        if self.settings.processing_limits[0] is None:
-            start = None
-        else:
-            start = str(self.settings.processing_limits[0])
-        self.start_edit = QLineEdit(start)
+        self.start_edit = QLineEdit()
         self.start_edit.setToolTip(
             "Can be either a FRAMENUMBER (integer) "
             "or a TIMESTAMP (YYYY-MM-DD HH:MM:SS)"
@@ -534,11 +531,7 @@ class AnalysisSettingsWindow(QDialog):
         self.start_edit.setMinimumHeight(30)
 
         # processing_limits (end)
-        if self.settings.processing_limits[1] is None:
-            end = None
-        else:
-            end = str(self.settings.processing_limits[1])
-        self.end_edit = QLineEdit(end)
+        self.end_edit = QLineEdit()
         self.end_edit.setToolTip(
             "Can be either a FRAMENUMBER (integer) "
             "or a TIMESTAMP (YYYY-MM-DD HH:MM:SS)"
@@ -733,10 +726,10 @@ class AnalysisSettingsWindow(QDialog):
         self.settings.utc_offset = self.utc_offset_spin.value()
 
         start_limit = self.start_edit.text().strip()
-        if not start_limit:
+        if not start_limit or not self._check_limits_is_valid(start_limit):
             start_limit = None
         end_limit = self.end_edit.text().strip()
-        if not end_limit:
+        if not end_limit or not self._check_limits_is_valid(end_limit):
             end_limit = None
         self.settings.processing_limits = (start_limit, end_limit)
 
@@ -1062,7 +1055,7 @@ class AnalysisSettingsWindow(QDialog):
         )
         save_path = Path(save_str) if save_str else None
         if save_path is None:
-            print("No file selected.")
+            logging.warning("No file selected.")
             return
         self._update_settings_from_ui()
         self.settings.save(save_path)
@@ -1077,7 +1070,7 @@ class AnalysisSettingsWindow(QDialog):
         )
         load_path = Path(load_str) if load_str else None
         if load_path is None:
-            print("No file selected.")
+            logging.warning("No file selected.")
             return
         self.settings.load(load_path)
         self._update_ui_from_settings()

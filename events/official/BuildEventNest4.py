@@ -38,7 +38,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
     Group 3
     Group 4
     ''' 
-    print("[NEST 4] : Assume that there is no occlusion")
+    logging.debug("[NEST 4] : Assume that there is no occlusion")
     
     parameters = getAnimalTypeParameters( animalType )
     
@@ -57,7 +57,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
     #pool.loadDetection( start = tmin, end = tmax )
     
     if ( len ( pool.getAnimalList() ) != 4 ):
-        print( "[NEST4 Cancelled] 4 animals are required to build nest 4.")
+        logging.debug( "[NEST4 Cancelled] 4 animals are required to build nest 4.")
         return
     
     contact = {}
@@ -123,10 +123,10 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
             if t in animal.detectionDictionary:                
                 animalDetectedList.append( animal )
         
-        #print( str(t) + " : " + str( nbAnimalAtT ) )
+        #logging.debug( str(t) + " : " + str( nbAnimalAtT ) )
                     
     
-        #print("TEST")
+        #logging.debug("TEST")
         graph = nx.Graph()
         # add nodes
         
@@ -147,7 +147,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
             nbAnimalAtT+=len(anonymousDetectionList)
             
             # manage anonymous
-            #print( t , "manage anonymous")
+            #logging.debug( f"{t} : manage anonymous" )
             '''
             # load all masks
             for animal in animalDetectedList:
@@ -161,7 +161,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
                         if distance != None:
                             if distance < parameters.DISTANCE_CONTACT_MASS_CENTER:
                                 graph.add_edge( detectionA, detectionB )
-                                #print("Adding edge with mask (det anonymous to det anonymous)")
+                                #logging.debug("Adding edge with mask (det anonymous to det anonymous)")
                     
             for detection in anonymousDetectionList:
                 for animal in animalDetectedList:
@@ -170,7 +170,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
                         if distance < parameters.DISTANCE_CONTACT_MASS_CENTER:
                             #if detection.getMask().isInContactWithMask( animal.getDetectionAt ( t ).getMask() ):
                             graph.add_edge( animal, detection )
-                            #print("Adding edge with mask")
+                            #logging.debug("Adding edge with mask")
         
         # list of CC from the biggest to the smallest
         #listCC = sorted(nx.connected_components( graph ), key=len, reverse=True)
@@ -189,13 +189,13 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
                 nbAnimalAtT+=1
                 animalDetectedList.append( animal )
         
-        #print( str(t) + " : " + str( nbAnimalAtT ) )
+        #logging.debug( str(t) + " : " + str( nbAnimalAtT ) )
         
         if nbAnimalAtT == 0:            
             isNest = True
             
         if not isNest:
-            #print("TEST")
+            #logging.debug("TEST")
             graph = nx.Graph();
             # add nodes
             for animal in animalDetectedList:
@@ -213,14 +213,14 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
             # check connected components. If the biggest group gets all animal, we got a nest4
             largestCC = len ( max(nx.connected_components( graph ), key=len) )
             
-            #print( str( t ) + " : " + str ( len( largestCC ) ) )
+            #logging.debug( str( t ) + " : " + str ( len( largestCC ) ) )
             
-            #print( str( t ) + " : " + str ( largestCC ) + " / " + str( nbAnimalAtT ) )
+            #logging.debug( str( t ) + " : " + str ( largestCC ) + " / " + str( nbAnimalAtT ) )
         '''    
         if len ( listCC ) == 0 :
             continue
         
-        #print( t , len ( listCC[0] ) , nbAnimalAtT )
+        #logging.debug( f"{t} : {len(listCC[0])} / {nbAnimalAtT}" )
         
         if len ( listCC[0] ) == nbAnimalAtT:
         
@@ -238,7 +238,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
                 isNest= True                     
                      
         if isNest == True:
-            #print( "ADD PUNCTUAL")
+            #logging.debug( "ADD PUNCTUAL")
             result[t] = True;
             
             
@@ -273,7 +273,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
                         continue
                 
                     eventName = "Group4"        
-                    print ( eventName )
+                    logging.debug ( eventName )
                     
                     groupTimeLine = EventTimeLine( None, eventName , animal , idAnimalB , idAnimalC , idAnimalD , loadEvent=False )
                     
@@ -308,6 +308,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None , animalT
     t.addLog( "Build Event Nest4" , tmin=tmin, tmax=tmax )
           
     
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

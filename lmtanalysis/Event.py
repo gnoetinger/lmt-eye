@@ -3,6 +3,7 @@ Created on 6 sept. 2017
 
 @author: Fab
 '''
+import logging
 import sqlite3
 import unittest
 from typing import Any
@@ -75,7 +76,7 @@ class Event:
             eventCandidate.startFrame,
             eventCandidate.endFrame,
         )
-        #print ( "Overlap debug: ( {} , {} ) - ( {} , {} ) : {}".format( self.startFrame, self.endFrame , eventCandidate.startFrame, eventCandidate.endFrame, result )  )
+        #logging.debug ( f"Overlap debug: ( {self.startFrame} , {self.endFrame} ) - ( {eventCandidate.startFrame} , {eventCandidate.endFrame} ) : {result}" )
         return result
 
     def shift(self, nbFrame: int):
@@ -166,7 +167,7 @@ class EventTimeLine:
         self.eventList: list[Event] = []
 
         if ( loadEvent == False ):
-            print( "Event " + str( eventName ) + " created. eventNameWithId = " +  str( self.eventNameWithId ) + " loadEvent: False" )
+            logging.debug( "Event " + str( eventName ) + " created. eventNameWithId = " +  str( self.eventNameWithId ) + " loadEvent: False" )
             return
         elif ( conn == None ):
             raise Exception("To load event, need a database connection.")
@@ -203,14 +204,14 @@ class EventTimeLine:
 
         query += " ORDER BY STARTFRAME"
 
-        print( query )
+        logging.debug( query )
         c.execute( query )
         all_rows = c.fetchall()
 
         if loadEventIndependently == True: # load events without using the rebuild dictionnary.
 
             if inverseEvent == True:
-                print ( "Warning: inverseEvent option not compatible in loadEventWithoutOverlapCheck")
+                logging.warning ( "inverseEvent option not compatible in loadEventWithoutOverlapCheck")
 
             for row in all_rows:
 
@@ -227,9 +228,9 @@ class EventTimeLine:
 
                 metadata = None
                 if len(row) >=10 :
-                    #print (row )
+                    #logging.debug (row )
                     metadata = row[9]
-                    #print("Load meta data: " , metadata )
+                    #logging.debug(f"Load meta data: {metadata}")
 
                 self.eventList.append( Event( start, end , metadata = metadata, baseId = row[0], description=row[2] ) )
 
@@ -256,10 +257,10 @@ class EventTimeLine:
             if ( inverseEvent == True ):
 
                 if ( minFrame == None ):
-                    print("To inverse event, need a minFrame")
+                    logging.warning("To inverse event, need a minFrame")
                     return
                 if ( maxFrame == None ):
-                    print("To inverse event, need a maxFrame")
+                    logging.warning("To inverse event, need a maxFrame")
                     return
 
                 for t in range( minFrame , maxFrame +1 ):
@@ -282,7 +283,7 @@ class EventTimeLine:
         #        self.eventList.append( Event( start, key ) )
         #        start = -1
 
-        print ( eventName , " Id(",idA ,",", idB, ",", idC, "," , idD , ") Min/maxFrame: (",minFrame,"/",maxFrame ,") Loaded (" , len( self.eventList ) , " records loaded in ", chrono.getTimeInS() , "S )")
+        logging.debug( f"{eventName} Id({idA},{idB},{idC},{idD}) Min/maxFrame: ({minFrame}/{maxFrame}) Loaded ({len(self.eventList)} records loaded in {chrono.getTimeInS()}S)" )
 
     def __str__(self):
         return self.eventName + " Id(" + str(self.idA) + ","+  str(self.idB)+ ","+ str(self.idC)+ "," + str(self.idD) + ")"
@@ -354,9 +355,9 @@ class EventTimeLine:
             if ( event.startFrame > cursor ):
                 cursor = event.endFrame
             else:
-                print( "Check ordered list: problem in list:")
-                print( "previous event : ", previousEvent )
-                print( "next (non ordered) event event : ", event )
+                logging.debug( "Check ordered list: problem in list:")
+                logging.debug( f"previous event : {previousEvent}" )
+                logging.debug( f"next (non ordered) event event : {event}" )
                 return False
             previousEvent = event
 
@@ -413,7 +414,7 @@ class EventTimeLine:
             distanceToStart = abs( frameNumber - event.startFrame )
             distanceToEnd = abs( frameNumber - event.endFrame )
             best = min( distanceToStart, distanceToEnd )
-            #print( bestDistance, best )
+            #logging.debug( f"bestDistance: {bestDistance}, best: {best}" )
             if ( best < bestDistance ):
                 closestEvent = event
                 bestDistance = best                
@@ -513,7 +514,7 @@ class EventTimeLine:
         eventList = self.getEventList()
         #if no event or only one event in the timeline:
         if len(eventList) <= 1:
-            print('No or only one event in timeline')
+            logging.warning('No or only one event in timeline')
             
         #if there are events in the timeline
         else:
@@ -536,7 +537,7 @@ class EventTimeLine:
         eventList = self.getEventList()
         #if no event or only one event in the timeline:
         if len(eventList) <= 1:
-            print('No or only one event in timeline')
+            logging.warning('No or only one event in timeline')
             meanIntervalLength = nan
         #if there are events in the timeline
         else:
@@ -544,13 +545,13 @@ class EventTimeLine:
             for event in eventList[1:]:
                 startFrameEvent2 = event.startFrame
                 interval = startFrameEvent2 - endFrameEvent1
-                #print('#### ', endFrameEvent1, startFrameEvent2, interval)
+                #logging.debug(f"#### {endFrameEvent1}, {startFrameEvent2}, {interval}")
                 intervalList.append(interval)
                 endFrameEvent1 = event.endFrame
             
             meanIntervalLength = np.mean(intervalList)
         
-        print(intervalList, meanIntervalLength)
+        logging.debug(f"Interval List: {intervalList}, Mean Interval Length: {meanIntervalLength}")
     
         
         return meanIntervalLength
@@ -564,7 +565,7 @@ class EventTimeLine:
         eventList = self.getEventList()
         #if no event or only one event in the timeline:
         if len(eventList) <= 1:
-            print('No or only one event in timeline')
+            logging.warning('No or only one event in timeline')
             stdIntervalLength = nan
         else:
             #if there are events in the timeline
@@ -572,13 +573,13 @@ class EventTimeLine:
             for event in eventList[1:]:
                 startFrameEvent2 = event.startFrame
                 interval = startFrameEvent2 - endFrameEvent1
-                #print('#### ', endFrameEvent1, startFrameEvent2, interval)
+                #logging.debug(f"#### {endFrameEvent1}, {startFrameEvent2}, {interval}")
                 intervalList.append(interval)
                 endFrameEvent1 = event.endFrame
         
             stdIntervalLength = np.std(intervalList)
         
-        print(intervalList, stdIntervalLength)
+        logging.debug(f"Interval List: {intervalList}, Standard Deviation: {stdIntervalLength}")
     
         return stdIntervalLength
         
@@ -644,7 +645,7 @@ class EventTimeLine:
         maxT = self.getMaxT( )
 
         if ( self.getNbEvent() == 0 ):
-            print("No event in timeLine")
+            logging.warning("No event in timeLine")
             return
 
         eventDictionary = self.getDictionary( minT, maxT )
@@ -652,14 +653,14 @@ class EventTimeLine:
         nbFrameOutOfEvent = 0
         lastEventEndFrame = minT
         for t in range( minT , maxT+1 ):
-            #print( "t: " + str(t) )
+            #logging.debug( "t: " + str(t) )
             if t in eventDictionary:
 
                 if nbFrameOutOfEvent > 0:
                     if nbFrameOutOfEvent <= numberOfFrameBetweenEvent:
                         # fill
                         for tt in range ( lastEventEndFrame , t ):
-                            #print( "filling " + str( tt ))
+                            #logging.debug( "filling " + str( tt ))
                             eventDictionary[tt] = True
 
                 nbFrameOutOfEvent = 0
@@ -679,7 +680,7 @@ class EventTimeLine:
         '''
 
         if ( self.getNbEvent() == 0 ):
-            print("No event in timeLine")
+            logging.warning("No event in timeLine")
             return
 
         #eventDictionary = self.getDictionary( minT, maxT )
@@ -696,7 +697,7 @@ class EventTimeLine:
         # copy original to dilated
         eventDictionaryDilated = eventDictionary.copy()
         for d in range( numberOfFrame ):
-            print("Dilate " , d)
+            logging.debug(f"Dilate {d}")
             for t in eventDictionaryDilated.copy().keys():    
                 
                 if t-1 not in eventDictionaryDilated:
@@ -741,8 +742,8 @@ class EventTimeLine:
         if ( eventA.overlapEvent( eventB ) ):
             mini = min( eventA.startFrame , eventB.startFrame )
             maxi = max( eventA.endFrame , eventB.endFrame )
-            #print ( "mini: " , mini )
-            #print ( "maxi: " , maxi )
+            #logging.debug ( f"mini: {mini}" )
+            #logging.debug ( f"maxi: {maxi}" )
             mergedEvent = Event( mini , maxi )
             try:
                 self.eventList.remove( eventA )
@@ -820,10 +821,10 @@ class EventTimeLine:
                 self.eventList.remove( event )
 
     def printEventList(self):
-        print( "Event list of {} / {} / nbEvent: {}".format( self.eventName , self.eventNameWithId, len( self.eventList ) ) )
+        logging.debug(f"Event list of {self.eventName} / {self.eventNameWithId} / nbEvent: {len(self.eventList)}")
         i = 0
         for event in self.eventList:
-            print ( "[{}] Event ({},{})".format( i, event.startFrame, event.endFrame ) )
+            logging.debug(f"[{i}] Event ({event.startFrame},{event.endFrame})")
             i+=1
 
     def getMaxT(self):
@@ -972,21 +973,25 @@ class EventTimeLine:
         delete the old event timeline and save the new calculated one in the lmtanalysis
         '''
         if (len( self.eventList) == 0):
-            print("no event")
+            logging.debug(f"{self.eventName}: no event")
         else:
-            print ( "Number of event: " , len( self.eventList ) )
-            print ( "Mean length of event: " , self.getMeanEventLength() )
-            print ( "first event frame: " , self.eventList[0].startFrame )
+            logging.debug(
+                f"Event timeline {self.eventName} built "
+                f"with {len( self.eventList )} events"
+            )
+            logging.debug(f"Number of event: {len( self.eventList )}")
+            logging.debug(f"Mean length of event: {self.getMeanEventLength()}")
+            logging.debug(f"first event frame: {self.eventList[0].startFrame}")
 
 
 
         if deleteExistingEvent:
-            print ( "Delete old entry in base: " + self.eventName )
+            logging.debug( f"Delete old entry in base: {self.eventName}" )
             deleteEventTimeLineInBase(connection, self.eventName, self.idA, self.idB, self.idC, self.idD )
         else:
-            print( "Keep previous entry.")
+            logging.debug( f"Keep previous entry." )
 
-        print ( "Saving timeLine: " + self.eventName + " ( " + str(len( self.eventList)) + " events )")
+        logging.debug( f"Saving timeLine: {self.eventName} ( {len( self.eventList)} events )")
         self.saveTimeLine(connection)
 
     def deleteEventTimeLineInBase( self , connection ):
@@ -1038,7 +1043,7 @@ class EventTimeLine:
 
         foundEventList = []
 
-        print("correlation started")
+        logging.debug("correlation started")
         chrono = Chronometer( "getLengthDistanceWithTimeLine " + timeLineCandidate.eventName )
 
         maxT = self.getMaxT( )
@@ -1089,7 +1094,7 @@ class EventTimeLine:
 
                     break
 
-        print ( "NB match with " + timeLineCandidate.eventName + " " + str(nbMatch) + " / " + str(nbEvent) + " time to compute: " + str(chrono.getTimeInMS()) )
+        logging.debug( f"NB match with {timeLineCandidate.eventName} {nbMatch} / {nbEvent} time to compute: {chrono.getTimeInMS()}" )
 
         v=0
 
@@ -1110,7 +1115,7 @@ def deleteEventTimeLineInBase( connection, eventName, idA=None, idB=None, idC=No
     delete an event in dataBase
     '''
     cursor = connection.cursor()
-    print ( "Deleting event {} (idA:{},idB:{},idC:{},idD:{}) from base...".format( eventName , idA, idB, idC, idD ) )
+    logging.debug( f"Deleting event {eventName} (idA:{idA},idB:{idB},idC:{idC},idD:{idD}) from base..." )
     query = "DELETE FROM EVENT WHERE NAME=\"{0}\"".format( eventName )
     if ( idA != None ):
         query += " AND IDANIMALA={0}".format( idA )
@@ -1124,11 +1129,11 @@ def deleteEventTimeLineInBase( connection, eventName, idA=None, idB=None, idC=No
     if ( idD != None ):
         query += " AND IDANIMALD={0}".format( idD )
 
-    print(query)
+    logging.debug(query)
 
     cursor.execute( query )
     connection.commit()
-    print ( "Number of event deleted: {} ".format ( cursor.rowcount ) )
+    logging.debug( f"Number of event deleted: {cursor.rowcount}" )
 
 def plotMultipleTimeLine( timeLineList , colorList=None , show=True , minValue=0 ):
     '''

@@ -3,6 +3,8 @@ Created on 13 nov. 2024
 
 @author: eye
 '''
+import logging
+
 from lmtanalysis.Event import deleteEventTimeLineInBase, EventTimeLine
 from lmtanalysis.Parameters import getAnimalTypeParameters
 from lmtanalysis.Animal import AnimalPool
@@ -10,7 +12,7 @@ from lmtanalysis.Animal import AnimalPool
 
 def flush( connection ):
     ''' flush event in database '''
-    print("Flushing longChase" )
+    logging.info("Flushing longChase" )
     deleteEventTimeLineInBase(connection, "longChase" )
     
 def prolongateTimeLine(timeLine, timeLineDic):
@@ -52,7 +54,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     for animalA in pool.animalDictionary.keys():
         for animalB in pool.animalDictionary.keys():
             if animalB == animalA:
-                print('idA is idB')
+                logging.debug('idA is idB')
                 continue
             else:
                 eventTimeLineTrain2[(animalA, animalB)] = EventTimeLine(connection, "Train2", idA=animalA, idB=animalB, minFrame=tmin, maxFrame=tmax)
@@ -94,13 +96,13 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
                 prolongateTimeLine(eventTimeLineTrain2[(animalA, animalB)], eventTimeLineEscapeContactBADic)
 
 
-    print("Creating events")
+    logging.debug("Creating events")
 
     longChaseEventTimeLineDic = {}
     for animalA in pool.animalDictionary.keys():
         for animalB in pool.animalDictionary.keys():
             if animalB == animalA:
-                print('idA is idB')
+                logging.debug('idA is idB')
                 continue
             else:
                 longChaseEventTimeLineDic[(animalA, animalB)] = EventTimeLine(None, "longChase", idA=animalA, idB=animalB, loadEvent=False)
@@ -117,5 +119,5 @@ def reBuildEvent( connection, file, tmin=None, tmax=None, pool = None, animalTyp
     t = TaskLogger(connection)
     t.addLog("Build Event longChase", tmin=tmin, tmax=tmax)
 
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
     return

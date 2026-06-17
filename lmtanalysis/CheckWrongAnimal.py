@@ -31,10 +31,10 @@ def check( connection, tmin=None, tmax=None ):
     '''
     
     nbAnimals = pool.getNbAnimals()
-    print("nb animals: " , nbAnimals )
+    logging.debug(f"nb animals: {nbAnimals}")
     for animal in pool.getAnimalList():
         if ( animal.name == None ):
-            print( "!!!! None animal detected with lmtanalysis id: " , animal.baseId ) 
+            logging.warning( f"!!!! None animal detected with lmtanalysis id: {animal.baseId}" )
     
     # log process
     
@@ -42,6 +42,6 @@ def check( connection, tmin=None, tmax=None ):
     t.addLog( "Correct wrong animal" , tmin=tmin, tmax=tmax )
 
        
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

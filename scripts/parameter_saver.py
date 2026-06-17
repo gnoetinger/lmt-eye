@@ -6,6 +6,7 @@
 """
 
 import json
+import logging
 from pathlib import Path
 from tkinter import filedialog
 from typing import Any
@@ -57,7 +58,7 @@ class ParameterSaver(object):
             with open(save_path, "w", encoding="utf-8") as f:
                 json.dump(self.data, f, indent=4)
         except Exception as e:
-            print(f"Failed to save json: {e}")
+            logging.error(f"Failed to save json: {e}")
 
     def load(self, file_path: Path):
         """Load data from the given path. If the path is a directory, it will
@@ -72,9 +73,9 @@ class ParameterSaver(object):
                 with open(load_path, "r", encoding="utf-8") as f:
                     self.data = json.load(f)
             except Exception as e:
-                print(f"Failed to load json: {e}")
+                logging.error(f"Failed to load json: {e}")
         else:
-            print(f"No default json found at {load_path}")
+            logging.warning(f"No default json found at {load_path}")
 
     def ask_save_name(self, open_dir: Path | None = None) -> Path:
         file_path = Path(

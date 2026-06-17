@@ -4,6 +4,7 @@ Created on 6 sept. 2017
 @author: Fab
 '''
 import sqlite3
+import logging
 from time import *
 from lmtanalysis.Chronometer import Chronometer
 from lmtanalysis.Animal import *
@@ -38,9 +39,7 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
         pool.loadAnimals( connection )
         pool.loadDetection( start = tmin, end = tmax , lightLoad=True )
     
-    eventName = "Approach contact"        
-    print ( eventName )
-    print('Computing ', eventName)
+    eventName = "Approach contact"
             
     #upload the timelines of interest
     contactDico = {}
@@ -90,21 +89,21 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
                 frameBeforeContact = contactEvent.startFrame - 1
                 #if the frame before the contact is within the approach timeline of A to B, then add the corresponding approach event to the approach contact timeline
                 if frameBeforeContact in approachDicoDico[animal, idAnimalB]:
-                    #print('A approaches B')
+                    #logging.debug('A approaches B')
                     approachEvent = approachDico[animal, idAnimalB].getEventAt( frameBeforeContact )
                     for t in range (approachEvent.startFrame, frameBeforeContact + 1):
                         appContactTimeLineDicoDico[animal, idAnimalB][t] = True
                 
                 #if the frame before the contact is within the approach timeline of B to A, then add the corresponding approach event to the approach contact timeline
                 elif frameBeforeContact in approachDicoDico[idAnimalB, animal]:
-                    #print('B approaches A')
+                    #logging.debug('B approaches A')
                     approachEvent = approachDico[idAnimalB, animal].getEventAt( frameBeforeContact )
                     for t in range (approachEvent.startFrame, frameBeforeContact + 1):
                         appContactTimeLineDicoDico[idAnimalB, animal][t] = True
                 
                 #if the frame before the contact is not within any approach timeline, then go to the next contact event
                 else:
-                    #print('Not possible to decide who is approaching who.')
+                    #logging.debug('Not possible to decide who is approaching who.')
                     continue
                 
  
@@ -120,6 +119,6 @@ def reBuildEvent( connection, file, tmin=None, tmax=None , pool = None, animalTy
     t = TaskLogger( connection )
     t.addLog( "Build Event Approach Contact" , tmin=tmin, tmax=tmax )
                        
-    print( "Rebuild event finished." )
+    logging.debug( "Rebuild event finished." )
         
     

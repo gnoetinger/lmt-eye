@@ -213,18 +213,9 @@ class HelpDialog(QDialog):
         msg = f"""
             <b>LMT Documentation</b><br>
             <br>
-            Here is the wiki, where you can find some documentation resources:<br>
+            Here is the LMT-EYE wiki, where you can find some documentation resources:<br>
             <a href='https://github.com/xmousset/lmt-eye/wiki'>
             LMT-EYE Wiki</a><br>
-            <br>
-            - <a href='https://github.com/xmousset/lmt-eye/wiki/Live-Mouse-Tracker---Assembly'>
-            LMT Installation MEMO</a><br>
-            <br>
-            - <a href='https://github.com/xmousset/lmt-eye/wiki/LMT-SQLite-DataBase-Documentation'>
-            LMT Database Explanation</a><br>
-            <br>
-            - <a href='https://github.com/xmousset/lmt-eye/wiki/LMT-Events-Documentation'>
-            LMT Events Description</a><br>
             <br>
             - <a href='https://docs.google.com/document/d/1Wn0yfELiKF1Vydvoe-_4qiQ44q61_3xg85r0I6be33Y/edit?usp=sharing'>
             RFID Tags informations</a><br>

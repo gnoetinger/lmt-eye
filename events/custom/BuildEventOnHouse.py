@@ -61,7 +61,7 @@ def reBuildEvent(
             loadEvent=False,
         )
 
-        # ================ EVENT DETECTION ================
+        # ================ EVENT LOGIC ================
 
         # Get the Center Zone event dictionary to filter detections
         center_zone_dict = EventTimeLineCached(
@@ -86,7 +86,7 @@ def reBuildEvent(
             if mass_ok and head_ok:
                 result[f] = True
 
-        # ================ END OF DETECTION ================
+        # ================ END OF LOGIC ================
 
         onHouse_TL.reBuildWithDictionary(result)
         onHouse_TL.removeEventsBelowLength(MIN_EVENT_LENGTH)

@@ -76,7 +76,7 @@ def reBuildEvent(
             loadEvent=False,
         )
 
-        # ================ EVENT DETECTION ================
+        # ================ EVENT LOGIC ================
 
         sorted_detections = sorted(animal.detectionDictionary.items())
 
@@ -94,7 +94,7 @@ def reBuildEvent(
                 if detect.massZ > HEAD_HEIGHT_THRESHOLD:
                     result_over_house[f] = True
 
-        # ================ END OF DETECTION ================
+        # ================ END OF LOGIC ================
 
         houseCornerTimeLine.reBuildWithDictionary(result_in_house_corner)
         houseCornerTimeLine.endRebuildEventTimeLine(connection)

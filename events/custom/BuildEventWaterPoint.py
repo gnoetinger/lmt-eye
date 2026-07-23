@@ -75,7 +75,7 @@ def reBuildEvent(
             loadEvent=False,
         )
 
-        # ================ EVENT DETECTION ================
+        # ================ EVENT LOGIC ================
 
         stop_dict = EventTimeLine(
             conn=connection,
@@ -102,7 +102,7 @@ def reBuildEvent(
                 if f in stop_dict:
                     result_wstop[f] = True
 
-        # ================ END OF DETECTION ================
+        # ================ END OF LOGIC ================
 
         water_zone_TL.reBuildWithDictionary(result_wzone)
         water_zone_TL.endRebuildEventTimeLine(connection)

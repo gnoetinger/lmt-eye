@@ -89,12 +89,12 @@ def reBuildEvent(
 
     # Events creation for each animal
     # ----------------
-    for animal_key in pool.animalDictionary.keys():
+    for animal in pool.animalDictionary.values():
 
         flickeringTimeLine = EventTimeLine(
             conn=connection,
             eventName=EVENTS_NAME[0],
-            idA=animal_key,
+            idA=animal.baseId,
             idB=None,
             idC=None,
             idD=None,
@@ -105,9 +105,7 @@ def reBuildEvent(
 
         result = {}
 
-        animal = pool.animalDictionary[animal_key]
-
-        # ================ Flickering logic ================
+        # ================ FLICKERING LOGIC ================
 
         animal_frames = np.array(sorted(animal.detectionDictionary.keys()))
         if animal_frames.size == 0:
@@ -116,10 +114,10 @@ def reBuildEvent(
         # compute speed and acceleration
         frame_gaps = np.diff(animal_frames)
         massX = np.array(
-            [animal.detectionDictionary.get(f).massX for f in animal_frames]
+            [animal.detectionDictionary[f].massX for f in animal_frames]
         )
         massY = np.array(
-            [animal.detectionDictionary.get(f).massY for f in animal_frames]
+            [animal.detectionDictionary[f].massY for f in animal_frames]
         )
 
         vx = np.zeros_like(massX)
@@ -169,10 +167,8 @@ def reBuildEvent(
             ):
                 result[f_key] = True
 
-        # ================ End of Flickering logic ================
+        # ================ END OF LOGIC ================
 
-        # DO NOT MODIFY
-        # ----------------
         flickeringTimeLine.reBuildWithDictionary(result)
         flickeringTimeLine.endRebuildEventTimeLine(connection)
 

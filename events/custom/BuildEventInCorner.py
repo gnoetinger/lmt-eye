@@ -93,7 +93,7 @@ def reBuildEvent(
                 loadEvent=False,
             )
 
-        # ================ EVENT DETECTION ================
+        # ================ EVENT LOGIC ================
 
         for f, detection in sorted(animal.detectionDictionary.items()):
             for event_name in EVENTS_NAME[1:]:
@@ -108,7 +108,7 @@ def reBuildEvent(
                     results["Corner"][f] = True
                     break
 
-        # ================ END OF DETECTION ================
+        # ================ END OF LOGIC ================
 
         for event_name in EVENTS_NAME:
             corners_TL[event_name].reBuildWithDictionary(results[event_name])

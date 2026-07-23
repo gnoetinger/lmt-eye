@@ -59,7 +59,7 @@ def reBuildEvent(
             loadEvent=False,
         )
 
-        # ================ EVENT DETECTION ================
+        # ================ EVENT LOGIC ================
 
         sorted_detections = sorted(animal.detectionDictionary.items())
 
@@ -75,10 +75,10 @@ def reBuildEvent(
             ):
                 result[f] = True
 
+        # ================ END OF LOGIC ================
+
         sniffFloorTimeLine.reBuildWithDictionary(result)
         sniffFloorTimeLine.endRebuildEventTimeLine(connection)
-
-        # ================ END OF DETECTION ================
 
     # Do not modify
     # ----------------

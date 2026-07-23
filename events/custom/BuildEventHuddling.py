@@ -64,7 +64,7 @@ def reBuildEvent(
             loadEvent=False,
         )
 
-        # ================ EVENT DETECTION ================
+        # ================ EVENT LOGIC ================
 
         n_hour = 0
         # Exceptional print here, because Huddling can be very long to process
@@ -88,7 +88,7 @@ def reBuildEvent(
             if roundness < ROUNDNESS_THRESHOLD:
                 result[frame_num] = True
 
-        # ================ END OF DETECTION ================
+        # ================ END OF LOGIC ================
 
         # store your result in the event timeline and save it in database
         huddling_TL.reBuildWithDictionary(result)

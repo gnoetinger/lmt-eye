@@ -64,6 +64,7 @@ def reBuildEvent(
         The appropriate animal type. Default is MOUSE.
     YOUR_VARIABLES : type
         Description of your variables.
+        IMPORTANT: LMT-EYE always use the default values of your variables.
 
     Returns
     -------
@@ -87,16 +88,6 @@ def reBuildEvent(
     # ----------------
     for animal in pool.animalDictionary.values():
 
-        # prepare a dictionary to store the result of your event detection
-        # keys of this dictionary should be frame numbers
-        # values should be True (do not add False values to the dictionary)
-        result = {}
-
-        # USAGE EXAMPLE:
-        # > result[f] = True
-        # this means your event occur at frame "f"
-        # NEVER add a "False" value to the dictionary
-
         # create a new event timeline for each animal
         # it will be filled with the result of your event detection
         # then saved in database at the end of the process
@@ -109,8 +100,18 @@ def reBuildEvent(
             idD=None,
             loadEvent=False,
         )
+        # prepare a dictionary to store the result of your event detection
+        # keys of this dictionary should be frame numbers
+        # values should be True (do not add False values to the dictionary)
+        # this result initialisation must follow the EventTimeLine creation
+        result = {}
 
-        # ================ EVENT DETECTION ================
+        # USAGE EXAMPLE:
+        # > result[f] = True
+        # this means your event occur at frame "f"
+        # NEVER add a "False" value to the dictionary
+
+        # ================ EVENT LOGIC ================
 
         # Useful examples
         # ----------------
@@ -148,7 +149,7 @@ def reBuildEvent(
 
         result[42] = True  # example of result dictionary
 
-        # ================ END OF DETECTION ================
+        # ================ END OF LOGIC ================
 
         # store your result in the event timeline and save it in database
         example_TL.reBuildWithDictionary(result)
@@ -172,4 +173,4 @@ def flush(connection) -> None:
     """Flush event in database"""
     for event_name in EVENTS_NAME:
         logging.info(f"Flushing event: {event_name}")
-        deleteEventTimeLineInBase(connection, event_name) 
+        deleteEventTimeLineInBase(connection, event_name)

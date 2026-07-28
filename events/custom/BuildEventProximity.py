@@ -17,12 +17,13 @@ from lmtanalysis.Measure import oneSecond, oneMinute, oneHour, oneDay, oneWeek
 # Event info
 # ----------------
 
-EVENTS_NAME: list[str] = ["Proximity"]
+EVENTS_NAME: list[str] = ["Proximity", "Farness"]
 
 EVENTS_DESCRIPTION: str = """
-    The animal is in proximity of another one. This event is detected when
-    the distance between the two animals is less or equal to 10 cm (20 cm for
-    rats).
+    The animal is in proximity or far from another one. Those events are
+    detected when the distance between the two animals is:
+    - less or equal to 10 cm (20 cm for rats) for Proximity
+    - strictly greater than 10 cm (20 cm for rats) for Farness
 """
 
 
@@ -69,8 +70,18 @@ def reBuildEvent(
                 idD=None,
                 loadEvent=False,
             )
+            farness_TL = EventTimeLine(
+                conn=None,
+                eventName=EVENTS_NAME[1],
+                idA=animal_1.baseId,
+                idB=animal_2.baseId,
+                idC=None,
+                idD=None,
+                loadEvent=False,
+            )
 
-            result = {}
+            result_p = {}
+            result_f = {}
 
             # ================ PROXIMITY LOGIC ================
 
@@ -85,12 +96,17 @@ def reBuildEvent(
                     dist2 = (x_1 - x_2) ** 2 + (y_1 - y_2) ** 2
 
                     if dist2 <= max_dist2:
-                        result[f] = True
+                        result_p[f] = True
+                    else:
+                        result_f[f] = True
 
             # ================ END OF LOGIC ================
 
-            proximity_TL.reBuildWithDictionary(result)
+            proximity_TL.reBuildWithDictionary(result_p)
             proximity_TL.endRebuildEventTimeLine(connection)
+
+            farness_TL.reBuildWithDictionary(result_f)
+            farness_TL.endRebuildEventTimeLine(connection)
 
     # Do not modify
     # ----------------

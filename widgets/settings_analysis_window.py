@@ -125,13 +125,21 @@ class AnalysisSettingsWindow(QDialog):
         )
         self.activity_cb.setChecked(self.settings.display_activity)
 
-        # display_trajectory
-        self.trajectory_cb = QCheckBox()
-        self.trajectory_cb.setToolTip(
-            "Whether to display the trajectory reports in the results.\n"
+        # display_heatmap
+        self.heatmap_cb = QCheckBox()
+        self.heatmap_cb.setToolTip(
+            "Whether to display the heatmap reports in the results.\n"
             "Could drastically increase memory usage and processing time."
         )
-        self.trajectory_cb.setChecked(self.settings.display_trajectory)
+        self.heatmap_cb.setChecked(self.settings.display_heatmap)
+
+        # display_trackplot
+        self.trackplot_cb = QCheckBox()
+        self.trackplot_cb.setToolTip(
+            "Whether to display the trackplot reports in the results.\n"
+            "Could drastically increase memory usage and processing time."
+        )
+        self.trackplot_cb.setChecked(self.settings.display_trackplot)
 
         # display_sensors
         self.sensors_cb = QCheckBox()
@@ -145,8 +153,11 @@ class AnalysisSettingsWindow(QDialog):
         reports_options_row.addWidget(QLabel("Activity:"))
         reports_options_row.addWidget(self.activity_cb)
         reports_options_row.addStretch(1)
-        reports_options_row.addWidget(QLabel("Trajectory:"))
-        reports_options_row.addWidget(self.trajectory_cb)
+        reports_options_row.addWidget(QLabel("Heatmap:"))
+        reports_options_row.addWidget(self.heatmap_cb)
+        reports_options_row.addStretch(1)
+        reports_options_row.addWidget(QLabel("Trackplot:"))
+        reports_options_row.addWidget(self.trackplot_cb)
         reports_options_row.addStretch(1)
         reports_options_row.addWidget(QLabel("Sensors:"))
         reports_options_row.addWidget(self.sensors_cb)
@@ -669,7 +680,8 @@ class AnalysisSettingsWindow(QDialog):
         self.animal_type_box.setCurrentText(self.settings.animal_type.name)
         self.sensors_cb.setChecked(self.settings.display_sensors)
         self.activity_cb.setChecked(self.settings.display_activity)
-        self.trajectory_cb.setChecked(self.settings.display_trajectory)
+        self.heatmap_cb.setChecked(self.settings.display_heatmap)
+        self.trackplot_cb.setChecked(self.settings.display_trackplot)
         self.flickering_cb.setChecked(self.settings.filter_flickering)
         self.stop_cb.setChecked(self.settings.filter_stop)
         self.event_duration_filter_spin.setValue(
@@ -707,7 +719,8 @@ class AnalysisSettingsWindow(QDialog):
         ]
         self.settings.display_sensors = self.sensors_cb.isChecked()
         self.settings.display_activity = self.activity_cb.isChecked()
-        self.settings.display_trajectory = self.trajectory_cb.isChecked()
+        self.settings.display_heatmap = self.heatmap_cb.isChecked()
+        self.settings.display_trackplot = self.trackplot_cb.isChecked()
         self.settings.filter_flickering = self.flickering_cb.isChecked()
         self.settings.filter_stop = self.stop_cb.isChecked()
         self.settings.event_min_duration = (

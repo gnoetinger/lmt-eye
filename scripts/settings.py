@@ -232,11 +232,14 @@ class AnalysisSettings(GenericSettings):
     display_activity : bool, optional
         Whether to display the activity reports in the results.
         Defaults to True.
+    display_heatmap : bool, optional
+        Whether to display the heatmap of the animals in the reports.
+        Defaults to False.
     display_sensors : bool, optional
         Whether to display the sensors reports in the results.
         Defaults to False.
-    display_trajectory : bool, optional
-        Whether to display the trajectory of the animals in the reports.
+    display_trackplot : bool, optional
+        Whether to display the trackplot of the animals in the reports.
         Defaults to False.
     events : set of str, optional
         Set of event names to analyze. By default, no event analysis is
@@ -307,8 +310,9 @@ class AnalysisSettings(GenericSettings):
             "bin_rounding": True,
             "database_path": None,
             "display_activity": True,
+            "display_heatmap": False,
             "display_sensors": False,
-            "display_trajectory": False,
+            "display_trackplot": False,
             "events": set(),
             "event_min_duration": 1,
             "filter_flickering": True,
@@ -375,8 +379,9 @@ class AnalysisSettings(GenericSettings):
         self.bin_rounding: bool = defaults["bin_rounding"]
         self.database_path: Path | None = defaults["database_path"]
         self.display_activity: bool = defaults["display_activity"]
+        self.display_heatmap: bool = defaults["display_heatmap"]
         self.display_sensors: bool = defaults["display_sensors"]
-        self.display_trajectory: bool = defaults["display_trajectory"]
+        self.display_trackplot: bool = defaults["display_trackplot"]
         self.events: set[str] = defaults["events"]
         self.event_min_duration: int = defaults["event_min_duration"]
         self.filter_flickering: bool = defaults["filter_flickering"]

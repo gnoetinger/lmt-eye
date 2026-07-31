@@ -154,7 +154,8 @@ class AnalysesComparator:
 
         # results_df: list[pd.DataFrame | None] = [
         #     activity_df,
-        #     # trajectory_df,
+        #     # heatmap_df,
+        #     # trackplot_df,
         #     events_df,
         #     sensors_df,
         #     animal_df,

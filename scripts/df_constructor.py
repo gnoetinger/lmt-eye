@@ -506,8 +506,8 @@ class DataframeConstructor:
 
         return df
 
-    def get_df_trajectory(self) -> pd.DataFrame | None:
-        """Get a DataFrame containing trajectory data for all animals.
+    def get_df_trackplot(self) -> pd.DataFrame | None:
+        """Get a DataFrame containing trackplot data for all animals.
         (distance are in cm)
         """
 
@@ -518,7 +518,7 @@ class DataframeConstructor:
 
         for bin_iterator in split_iterator:
             logging.info(
-                f"TRAJECTORY processing for frames {bin_iterator[0][0]} to "
+                f"TRACKPLOT processing for frames {bin_iterator[0][0]} to "
                 f"{bin_iterator[-1][1]}"
             )
             self.animal_pool.loadDetection(
@@ -531,7 +531,7 @@ class DataframeConstructor:
             results = []
             for animal in self.animal_pool.getAnimalList():
                 logging.debug(
-                    f"Creating TRAJECTORY dataframe for animal {animal.RFID}"
+                    f"Creating TRACKPLOT dataframe for animal {animal.RFID}"
                 )
 
                 xList, yList, fList = animal.get_trajectory()
@@ -540,19 +540,33 @@ class DataframeConstructor:
                         f"Animal parameters => Unable to convert to cm"
                     )
                     cm_over_px = 1.0
+                    x_origin = 0.0
+                    y_origin = 0.0
+                    lmt_half_size = 0.0
                 else:
                     cm_over_px = animal.parameters.scaleFactor
+                    x_origin = (
+                        animal.parameters.cornerCoordinatesOpenFieldArea[0][0]
+                    )
+                    y_origin = (
+                        animal.parameters.cornerCoordinatesOpenFieldArea[0][1]
+                    )
+                    lmt_half_size = animal.parameters.ARENA_SIZE / 2
 
                 for i in range(len(xList)):
                     if np.isnan(xList[i]).any() or np.isnan(yList[i]).any():
                         continue
+                    x_mean = np.mean(xList[i])
+                    y_mean = np.mean(yList[i])
+                    x = (x_mean - x_origin) * cm_over_px - lmt_half_size
+                    y = (y_mean - (-y_origin)) * cm_over_px + lmt_half_size
                     results.append(
                         {
                             "RFID": animal.RFID,
                             "ANIMALID": animal.baseId,
                             "FRAME": fList[i],
-                            "X": np.mean(xList[i]) * cm_over_px,
-                            "Y": np.mean(yList[i]) * cm_over_px,
+                            "X": x,
+                            "Y": y,
                             "TIME": self.binner.frame_to_time(fList[i]),
                         }
                     )

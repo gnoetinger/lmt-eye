@@ -19,7 +19,7 @@ from scripts.tkinter_tools import (
 )
 
 from events.events_manager import get_modules_from_events_name
-from reports import activity, event, overview, sensors, trajectory
+from reports import activity, event, heatmap, overview, sensors, trackplot
 
 
 class DatabaseAnalyzer:
@@ -198,7 +198,9 @@ class DatabaseAnalyzer:
         total_steps = 1 + len(sorted_events)
         if self.settings.display_activity:
             total_steps += 1
-        if self.settings.display_trajectory:
+        if self.settings.display_heatmap:
+            total_steps += 1
+        if self.settings.display_trackplot:
             total_steps += 1
         if self.settings.display_sensors:
             total_steps += 1
@@ -222,18 +224,33 @@ class DatabaseAnalyzer:
         else:
             activity_df = None
 
-        # TRAJECTORY
+        # TRACKPLOT & HEATMAP
         # ----------------
-        if self.settings.display_trajectory:
-            trajectory_df = df_constructor.get_df_trajectory()
-            trajectory.generic_reports(
+        if self.settings.display_trackplot or self.settings.display_heatmap:
+            trackplot_df = df_constructor.get_df_trackplot()
+        else:
+            trackplot_df = None
+
+        if self.settings.display_heatmap and trackplot_df is not None:
+
+            heatmap.generic_reports(
                 repo_manager,
-                trajectory_df,
+                trackplot_df,
                 self.settings,
             )
-            trajectory_df = None  # avoid big memory usage
             progression[0] += 1
             self.update_progression(*progression)
+
+        if self.settings.display_trackplot and trackplot_df is not None:
+            trackplot.generic_reports(
+                repo_manager,
+                trackplot_df,
+                self.settings,
+            )
+            progression[0] += 1
+            self.update_progression(*progression)
+
+        trackplot_df = None  # avoid big memory usage
 
         # EVENTS
         # ----------------

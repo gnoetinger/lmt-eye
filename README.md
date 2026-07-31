@@ -2,9 +2,13 @@
 
 A PyQt6-based desktop application for behavioral analysis and event detection in animal research. LMT-EYE provides tools for analyzing, comparing, and visualizing behavioral data and events from an .sqlite database created by LMT.
 
+Find an example of what LMT-EYE can do here :
+[LMT-EYE example](https://micecraft.org/eye-example)
+
 <div align="center">
   <img src="res/lmt_eye_icon.png" alt="LMT-EYE Icon" width="300">
 </div>
+
 
 ## Requirements
 

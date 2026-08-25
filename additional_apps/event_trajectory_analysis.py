@@ -7,7 +7,9 @@ results. It uses PyQt6 for the GUI, pandas for data manipulation, and Plotly
 for graphing.
 
 It is a standalone tool for analyzing animal trajectory data in relation to
-events recorded in the database. It is designed to be user-friendly, allowing users to load a database or a pre-processed CSV, specify parameters, process the data, and visualize the results.
+events recorded in the database. It is designed to be user-friendly, allowing
+users to load a database or a pre-processed CSV, specify parameters, process
+the data, and visualize the results.
 """
 
 import sys

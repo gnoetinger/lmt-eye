@@ -9,8 +9,8 @@ from pathlib import Path
 # command for executable creation (run in terminal at project root):
 # pyinstaller --onefile --icon=res/lmt_eye_icon.png --add-data "res/lmt_eye_icon.png;res" --add-data "res/template;res/template" --add-data "res/assets;res/assets" --add-data "res/mouse_run.gif;res" --add-data "events/custom;events/custom" lmt_eye.py
 
-APP_VERSION = "2.3"
-APP_RELEASE = "2026-06-17"
+APP_VERSION = "2.4"
+APP_RELEASE = "2026-08-26"
 
 APP_PATH = Path(__file__).parent
 ICON_PATH = APP_PATH / "res" / "lmt_eye_icon.png"

@@ -3,6 +3,8 @@ Created on 6 sept. 2017
 
 @author: Fab
 '''
+from __future__ import annotations
+
 import logging
 import sqlite3
 import unittest

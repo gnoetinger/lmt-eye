@@ -58,6 +58,9 @@ from widgets.sql_modifications import UpdateDatabaseInfo
 from widgets.pyqt6_tools import YesNoQuestion, get_btn_style
 from widgets.settings_analysis_window import AnalysisSettingsWindow
 from widgets.settings_comparison_window import ComparisonSettingsWindow
+from widgets.mcp_indicator import McpStatusIndicator
+
+from mcp_server import McpSettings, app_state, client_setup, get_controller
 
 logger_setup(
     level=logging.INFO,
@@ -97,6 +100,23 @@ class LMTEYEApp(QMainWindow):
         switch_menu.addAction("Analysis creation", lambda: self.change_ui(0))
         switch_menu.addAction("Analysis comparison", lambda: self.change_ui(1))
 
+        # local MCP server on/off (same setting as in Analysis settings)
+        switch_menu.addSeparator()
+        self.mcp_action = switch_menu.addAction("Local MCP server")
+        if self.mcp_action is None:
+            raise RuntimeError("MCP action error.")
+        self.mcp_action.setCheckable(True)
+        self.mcp_action.setChecked(get_controller().settings.enabled)
+        self.mcp_action.triggered.connect(self.on_mcp_toggled)
+        switch_menu.aboutToShow.connect(
+            lambda: self.mcp_action.setChecked(
+                get_controller().settings.enabled
+            )
+        )
+        switch_menu.addAction(
+            "Register in Claude Code", self.on_register_claude_code
+        )
+
         debug_menu = menu.addMenu("Debug")
         if debug_menu is None:
             raise RuntimeError("Debug menu error.")
@@ -112,6 +132,38 @@ class LMTEYEApp(QMainWindow):
         help_menu.addAction("About LMT-EYE", lambda: self.show_help("version"))
         help_menu.addAction("Resources", lambda: self.show_help("resources"))
         help_menu.addAction("Documentation", lambda: self.show_help("doc"))
+        help_menu.addAction("MCP server", lambda: self.show_help("mcp"))
+
+        # MCP status light, top right corner
+        menu.setCornerWidget(
+            McpStatusIndicator(get_controller(), menu),
+            Qt.Corner.TopRightCorner,
+        )
+
+    def on_register_claude_code(self):
+        """Register the local MCP server in Claude Code (runs the 'claude'
+        command, so the user does not have to type it)."""
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            ok, message = get_controller().register_in_claude_code()
+        finally:
+            QApplication.restoreOverrideCursor()
+        if ok:
+            QMessageBox.information(self, "Claude Code", message)
+        else:
+            QMessageBox.warning(self, "Claude Code", message)
+
+    def on_mcp_toggled(self, checked: bool):
+        """Enable or disable the local MCP server from the menu."""
+        controller = get_controller()
+        controller.set_enabled(checked)
+        if checked and not controller.is_running:
+            QMessageBox.warning(
+                self,
+                "MCP server",
+                "The MCP server could not start:\n"
+                f"{controller.last_error}",
+            )
 
     def change_ui(self, idx: int | None = None):
         if idx is not None:
@@ -138,7 +190,8 @@ class LMTEYEApp(QMainWindow):
         )
 
     def show_help(
-        self, option: Literal["full", "version", "resources", "doc"] = "full"
+        self,
+        option: Literal["full", "version", "resources", "doc", "mcp"] = "full",
     ):
         help_dialog = HelpDialog(self)
         match option:
@@ -150,6 +203,8 @@ class LMTEYEApp(QMainWindow):
                 help_dialog.init_ui(help_dialog.resources_msg())
             case "doc":
                 help_dialog.init_ui(help_dialog.doc_msg())
+            case "mcp":
+                help_dialog.init_ui(help_dialog.mcp_msg())
         help_dialog.exec()
 
 
@@ -219,6 +274,34 @@ class HelpDialog(QDialog):
             <br>
             - <a href='https://docs.google.com/document/d/1Wn0yfELiKF1Vydvoe-_4qiQ44q61_3xg85r0I6be33Y/edit?usp=sharing'>
             RFID Tags informations</a><br>
+        """
+        return msg
+
+    def mcp_msg(self):
+        controller = get_controller()
+        _, description = controller.status()
+        if client_setup.registered_url() == controller.url:
+            claude_code = "registered"
+        elif client_setup.find_claude_cli() is None:
+            claude_code = "not installed"
+        else:
+            claude_code = "not registered"
+        msg = f"""
+            <b>Local MCP server</b><br>
+            <br>
+            Status: {description.splitlines()[0]}<br>
+            Address: {controller.url}<br>
+            <br>
+            Claude Code: {claude_code}<br>
+            <br>
+            LMT-EYE registers itself in Claude Code when the server starts
+            (or use <i>Menu &gt; Register in Claude Code</i>). Manual
+            command, if needed:<br>
+            <code>claude mcp add --transport http --scope user lmt-eye
+            {controller.url}</code><br>
+            <br>
+            Enable or disable the server in <i>Menu &gt; Local MCP server</i>
+            or in the analysis settings window.
         """
         return msg
 
@@ -476,6 +559,7 @@ class DatabaseAnalysisWidget(QWidget):
         if not file_path:
             return
         self.database_path = Path(file_path)
+        app_state.database_path = self.database_path  # shared with MCP tools
         self.update_database_info()
 
         self.adjust_continue_btn_color()
@@ -1092,6 +1176,24 @@ if __name__ == "__main__":
     app.setApplicationVersion(APP_VERSION)
     app.setWindowIcon(QIcon(str(ICON_PATH)))
     app.setApplicationName("LMT-EYE")
+
+    # local MCP server: ask once on first launch, then follow the preference
+    mcp_controller = get_controller(APP_VERSION)
+    if not McpSettings.exists():
+        answer = QMessageBox.question(
+            None,
+            "LMT-EYE - MCP server",
+            "Enable the local MCP server?\n\n"
+            "It lets MCP clients (Claude, ...) running on this computer read "
+            "LMT-EYE data. You can change this later in the analysis "
+            "settings or in Menu > Local MCP server.",
+        )
+        mcp_controller.set_enabled(
+            answer == QMessageBox.StandardButton.Yes
+        )
+    elif mcp_controller.settings.enabled:
+        mcp_controller.start()
+    app.aboutToQuit.connect(mcp_controller.stop)
 
     main_window = LMTEYEApp()
 

@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
 
 from events.events_manager import OFFICIAL_EVENTS, CUSTOM_EVENTS
 from scripts.settings import AnalysisSettings
+from mcp_server import get_controller
 
 from widgets.pyqt6_tools import get_btn_style
 from widgets.area_selection import AreaSelectionWindow
@@ -579,6 +580,25 @@ class AnalysisSettingsWindow(QDialog):
         form.addRow(limits_infos_row)
         form.addRow(self.Qhline())
 
+        # ================ LOCAL MCP SERVER ================
+
+        # not an analysis parameter: applied immediately and saved in
+        # mcp_settings.json, whatever button is used to close this window
+        self.mcp_cb = QCheckBox("Enable local MCP server")
+        self.mcp_cb.setToolTip(
+            "Let MCP clients (Claude, ...) read LMT-EYE data through a\n"
+            "local server (http://127.0.0.1 only). Applied immediately."
+        )
+        self.mcp_cb.setChecked(get_controller().settings.enabled)
+        self.mcp_cb.toggled.connect(self.on_mcp_toggled)
+
+        mcp_row = QHBoxLayout()
+        mcp_row.addWidget(self.mcp_cb)
+        mcp_row.addStretch(1)
+
+        form.addRow("<b>MCP server</b>", mcp_row)
+        form.addRow(self.Qhline())
+
         # ================ SETTINGS BUTTONS ================
 
         btn_style = get_btn_style(size=13, txt_color="white", bg_color="black")
@@ -1096,6 +1116,18 @@ class AnalysisSettingsWindow(QDialog):
         )
         self._update_settings_from_ui()
         self.settings.save(save_path)
+
+    def on_mcp_toggled(self, checked: bool):
+        """Enable or disable the local MCP server."""
+        controller = get_controller()
+        controller.set_enabled(checked)
+        if checked and not controller.is_running:
+            QMessageBox.warning(
+                self,
+                "MCP server",
+                "The MCP server could not start:\n"
+                f"{controller.last_error}",
+            )
 
     def on_accept(self):
         """Update settings and accept dialog."""

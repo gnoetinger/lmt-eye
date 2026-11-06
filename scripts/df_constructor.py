@@ -22,6 +22,9 @@ class DataframeConstructor:
     windows (> oneDay), by processing data in chunks to reduce memory usage. By
     default, chunk size is set to one day.
     """
+    
+    
+    
 
     def __init__(
         self,

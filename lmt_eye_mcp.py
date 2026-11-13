@@ -1,5 +1,5 @@
 """
-@author: xmousset
+@author: xavier mousset, guillaume noetinger, fabrice de chaumont
 """
 
 print("\n === LMT-EYE === \n")
@@ -9,8 +9,8 @@ from pathlib import Path
 # command for executable creation (run in terminal at project root):
 # pyinstaller --onefile --icon=res/lmt_eye_icon.png --add-data "res/lmt_eye_icon.png;res" --add-data "res/template;res/template" --add-data "res/assets;res/assets" --add-data "res/mouse_run.gif;res" --add-data "events/custom;events/custom" lmt_eye.py
 
-APP_VERSION = "2.4"
-APP_RELEASE = "2026-08-26"
+APP_VERSION = "3.0"
+APP_RELEASE = "2026-11-13"
 
 APP_PATH = Path(__file__).parent
 ICON_PATH = APP_PATH / "res" / "lmt_eye_icon.png"
@@ -236,7 +236,8 @@ class HelpDialog(QDialog):
 
     def version_msg(self):
         msg = f"""
-            <b>LMT-EYE</b> - <i>Explore Your Experiments !</i><br>
+            <b>LMT-EYE-MCP</b> - <i>Explore Your Experiments !</i><br>
+            <b>more info on MCP at https://micecraft.org/lmt#mcp</i><br>
             <br>
             Version: {APP_VERSION}<br>
             Release date: {APP_RELEASE}<br>

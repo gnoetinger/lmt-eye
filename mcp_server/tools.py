@@ -16,6 +16,31 @@ from mcp_server.state import app_state
 
 MAX_ROWS = 500
 
+# Sent to the client when it connects; the model reads it at the start of
+# every session. Keep it short: details belong in tool descriptions.
+INSTRUCTIONS = (
+    "Access to Live Mouse Tracker (LMT) experiments opened in LMT-EYE. "
+    "Without 'database_path', tools use the database currently loaded in "
+    "LMT-EYE. All tools are read-only.\n"
+    "LMT database conventions:\n"
+    "- Positions (MASS_X/Y, FRONT_*, BACK_*) are in pixels. Convert with "
+    "10/57 cm per pixel for mice and 20/57 for rats. The y axis points down (camera view).\n"
+    "- Frames are usually at 30 frames/s (see get_database_info). Time 0 "
+    "is the first frame of the FRAME table.\n"
+    "- MASS_Z is a relative height of the animal from the ground in millimeters."
+    "low on the floor, higher on raised objects such as a house roof. "
+    "Check the levels in each setup.\n"
+    "- Pairwise events (e.g. 'Oral-oral Contact', 'Contact') are stored "
+    "once per animal of the pair (A->B and B->A). Merge them before "
+    "counting contacts between two animals.\n"
+    "- A centre-of-mass step longer than 85.5 px between two consecutive "
+    "frames is a tracking error. Exclude it from distances.\n"
+    "- Even when an animal is stopped, the tracking may still move a little around the animal, which provides overestimated distances.\n"
+    "- Identity switches can happen when two mice are close: the tracked "
+    "position jumps by several cm in one frame. Check for them before "
+    "trusting a rare event."    
+)
+
 
 def _resolve_database(database_path: str | None) -> Path:
     """Return the database to read: the given path, or the database
@@ -57,11 +82,7 @@ def build_server(app_version: str = "") -> MCPServer:
         name="lmt-eye",
         title="LMT-EYE",
         version=app_version,
-        instructions=(
-            "Access to Live Mouse Tracker (LMT) experiments opened in "
-            "LMT-EYE. Without 'database_path', tools use the database "
-            "currently loaded in LMT-EYE."
-        ),
+        instructions=INSTRUCTIONS,
     )
 
     @server.tool()

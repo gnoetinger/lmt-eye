@@ -38,7 +38,26 @@ INSTRUCTIONS = (
     "- Even when an animal is stopped, the tracking may still move a little around the animal, which provides overestimated distances.\n"
     "- Identity switches can happen when two mice are close: the tracked "
     "position jumps by several cm in one frame. Check for them before "
-    "trusting a rare event."    
+    "trusting a rare event.\n"
+    "- for data analysis report, prefer a webpage using plotly for figures\n"
+    "- if events are missing in the database, the rebuild all events function compute them. The table LOG displays in each row the last time the event has been computed, and for which time range (in frame).\n"
+    "- in the table events, the IDANIMAL* represents the animals in the order of the event description: (e.g Oral-genital Contact means contact of the oral part of IDANIMALA with genital of IDANIMALB)."
+    "One exception for nest3*: the idanimalA is the one that is not in the nest. Nest3 only work if 4 animals are in the database\n"
+    
+    "Quality control:\n"
+    "- The frame should be at 30fps\n"
+    "- Check duplicated databases\n"
+    
+    "Analysis:\n"
+    "- The events can be analyzed in term of number, duration and frequency\n"
+    "- for the distance between animals, use the mass center X and Y"
+    "- for the sake of reproducibility, generate python codes"
+    "- it is not parameters but variables"
+    "- stats: mice of a same experiment are not independent"
+    
+    "Color conventions:\n"
+    "- animal A is red, B:green, C:purple D:orange\n"
+        
 )
 
 

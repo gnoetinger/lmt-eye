@@ -3,25 +3,39 @@
 All tools are read-only. They run in a worker thread of the server (never
 in the Qt thread) and open SQLite databases in read-only mode, because an
 analysis may be writing to the same database at the same time.
+
+The queries themselves live in ``mcp_server/lmt_queries.py``; this file
+only declares the tools and checks their arguments. The user prompts that
+the AI passes to ``record_user_prompt`` are written, only once another
+tool is used to answer them, to
+``mcp_server/logs/user_prompts.log`` (see ``query_log.py``).
 """
 
 import sqlite3
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from mcp_server.state import app_state
 
-MAX_ROWS = 500
+MAX_EVENTS_PER_CALL = 30
 
 # Sent to the client when it connects; the model reads it at the start of
 # every session. Keep it short: details belong in tool descriptions.
 INSTRUCTIONS = (
     "Access to Live Mouse Tracker (LMT) experiments opened in LMT-EYE. "
     "Without 'database_path', tools use the database currently loaded in "
-    "LMT-EYE. All tools are read-only.\n"
+    "LMT-EYE. No tool modifies the databases.\n"
+    "Prompt log: only when you use LMT-EYE tools to answer a user message, "
+    "call record_user_prompt once with that message copied word for word (no "
+    "summary, no translation), together with or just before your first "
+    "other LMT-EYE tool call. Never call it for a message you answer without "
+    "LMT-EYE tools, and do not call it again for the other tool calls "
+    "answering the same message. Also fill its provider, model and effort "
+    "arguments when you know them (e.g. 'Anthropic', your exact model id, "
+    "your reasoning effort); leave out what you do not know, never guess.\n"
     "LMT database conventions:\n"
     "- Positions (MASS_X/Y, FRONT_*, BACK_*) are in pixels. Convert with "
     "10/57 cm per pixel for mice and 20/57 for rats. The y axis points down (camera view).\n"
@@ -38,6 +52,21 @@ INSTRUCTIONS = (
     "- Even when an animal is stopped, the tracking may still move a little around the animal, which provides overestimated distances.\n"
     "- Identity switches can happen when two mice are close: the tracked "
     "position jumps by several cm in one frame. Check for them before "
+    "trusting a rare event.\n"
+    "LMT-EYE reports:\n"
+    "- To count or time events, use get_event_summary rather than counting "
+    "EVENT rows: it applies the report rules (an animal's events merge all "
+    "its partners, overlapping rows form one event, window clipping, "
+    "minimum duration).\n"
+    "- In report tables, summing EVENT_COUNT over time bins counts an event "
+    "once in every bin it touches, so the sum is slightly too high. "
+    "get_event_summary counts each event once.\n"
+    "- 'Per day' report values are extrapolated from the experiment "
+    "duration: check duration_hours in get_database_info before quoting "
+    "them.\n"
+    "- For anything else, query_database runs read-only SQL. Results are "
+    "not limited in size: filter (WHERE), aggregate (GROUP BY) or use LIMIT, "
+    "especially on DETECTION (one row per animal per frame)."
     "trusting a rare event.\n"
     "- for data analysis report, prefer a webpage using plotly for figures\n"
     "- if events are missing in the database, the rebuild all events function compute them. The table LOG displays in each row the last time the event has been computed, and for which time range (in frame).\n"
@@ -88,9 +117,19 @@ def _connect_read_only(path: Path) -> sqlite3.Connection:
 def _rows_as_dicts(
     connection: sqlite3.Connection, query: str
 ) -> list[dict[str, Any]]:
+    """All rows of a query, as dictionaries."""
     cursor = connection.execute(query)
     columns = [d[0] for d in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchmany(MAX_ROWS)]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def _sqlite_error(e: sqlite3.Error, what: str) -> ToolError:
+    if "locked" in str(e).lower():
+        return ToolError(
+            f"Cannot read {what}: the database is locked, probably by an "
+            "analysis running in LMT-EYE. Try again when it is finished."
+        )
+    return ToolError(f"Cannot read {what}: {e}")
 
 
 def build_server(app_version: str = "") -> MCPServer:
@@ -103,64 +142,320 @@ def build_server(app_version: str = "") -> MCPServer:
         instructions=INSTRUCTIONS,
     )
 
+    # local log of the user prompts (see record_user_prompt)
+    from mcp_server import query_log
+
+    query_log.setup()
+
+    def _mark_used(ctx: Context) -> None:
+        """Tell the prompt log that LMT-EYE is used to answer: the pending
+        user prompt of this conversation is written now."""
+        try:
+            request_context = ctx.request_context
+        except Exception:
+            request_context = None
+        query_log.tool_used(request_context)
+
     @server.tool()
-    def get_loaded_database() -> dict[str, Any]:
+    def record_user_prompt(
+        prompt: str,
+        ctx: Context,
+        provider: str | None = None,
+        model: str | None = None,
+        effort: str | None = None,
+    ) -> dict[str, Any]:
+        """Record the user's message in LMT-EYE's local prompt log.
+
+        Call it only when you use other LMT-EYE tools to answer the
+        message, once, with or just before the first of them. Never call it
+        for a message answered without LMT-EYE tools. Copy the user's
+        message word for word: no summary, no translation, no added context.
+        The message is written to the log when another LMT-EYE tool is
+        called. It returns {"recorded": ...} or {"pending": true} with a
+        reason; either way, go on answering the user.
+
+        Optional, self-declared (written as given, not verified by
+        LMT-EYE): provider (e.g. 'Anthropic', 'OpenAI'), model (your exact
+        model id) and effort (your reasoning effort level, e.g. 'low',
+        'medium', 'high'). Give only what you know; omit the rest rather
+        than guess."""
+        if not prompt or not prompt.strip():
+            raise ToolError("Give the user's message in 'prompt'.")
+        try:
+            request_context = ctx.request_context
+        except Exception:
+            request_context = None
+        ai = {"provider": provider, "model": model, "effort": effort}
+        return query_log.record_prompt(prompt, request_context, ai)
+
+    @server.tool()
+    def get_loaded_database(ctx: Context) -> dict[str, Any]:
         """Return the path of the LMT database currently loaded in LMT-EYE,
         or null if none is loaded."""
+        _mark_used(ctx)
         path = app_state.database_path
         return {"database_path": str(path) if path is not None else None}
 
     @server.tool()
-    def get_database_info(database_path: str | None = None) -> dict[str, Any]:
+    def get_database_info(
+        ctx: Context, database_path: str | None = None
+    ) -> dict[str, Any]:
         """Summary of an LMT experiment: number of animals, start and end
-        (UTC), duration and frame rate."""
-        # imported here: heavy module, only needed when the tool is called
-        from scripts.db_analyzer import DatabaseAnalyzer
+        (UTC), duration, frame rate, first and last frame, tables, sensors
+        available in the FRAME table, and the default LMT-EYE analysis
+        folder ('<database> - analysis') if it exists."""
+        _mark_used(ctx)
+        # imported here: only needed when the tool is called
+        from mcp_server import lmt_queries
 
-        path = _resolve_database(database_path)
-        infos = DatabaseAnalyzer.get_informations(path)
-        return {
-            "database_path": str(path),
-            "database_name": infos["database_name"],
-            "n_animals": int(infos["n_animals"]),
-            "start_time_utc": infos["start_time"].isoformat(),
-            "end_time_utc": infos["end_time"].isoformat(),
-            "duration_hours": round(
-                infos["duration"].total_seconds() / 3600, 2
-            ),
-            "fps": round(float(infos["fps"]), 2),
-        }
-
-    @server.tool()
-    def list_animals(database_path: str | None = None) -> list[dict[str, Any]]:
-        """List the animals of an LMT experiment (content of the ANIMAL
-        table: ID, RFID, name, genotype, ...)."""
         path = _resolve_database(database_path)
         connection = _connect_read_only(path)
         try:
-            return _rows_as_dicts(connection, "SELECT * FROM ANIMAL")
+            return lmt_queries.database_info(connection, path)
         except sqlite3.Error as e:
-            raise ToolError(f"Cannot read ANIMAL table: {e}")
+            raise _sqlite_error(e, "the database")
+        except ValueError as e:
+            raise ToolError(str(e))
+        finally:
+            connection.close()
+
+    @server.tool()
+    def list_animals(
+        ctx: Context, database_path: str | None = None
+    ) -> dict[str, Any]:
+        """List the animals of an LMT experiment (content of the ANIMAL
+        table: ID, RFID, name, genotype, ...)."""
+        _mark_used(ctx)
+        path = _resolve_database(database_path)
+        connection = _connect_read_only(path)
+        try:
+            rows = _rows_as_dicts(
+                connection, "SELECT * FROM ANIMAL ORDER BY ID"
+            )
+            return {"animals": rows}
+        except sqlite3.Error as e:
+            raise _sqlite_error(e, "the ANIMAL table")
         finally:
             connection.close()
 
     @server.tool()
     def list_event_types(
+        ctx: Context,
         database_path: str | None = None,
-    ) -> list[dict[str, Any]]:
-        """List the behavioural event types present in an LMT database,
-        with their number of occurrences."""
+    ) -> dict[str, Any]:
+        """List the behavioural event types present in an LMT database.
+
+        For each event name: n_rows (EVENT rows; symmetric pairwise events
+        such as 'Contact' have two rows per occurrence, A->B and B->A),
+        n_animals, animals_per_row (1 = individual, 2 = pairwise,
+        3-4 = group), stored_both_directions (true for symmetric pairwise
+        events), raw_duration_s (sum of row durations, not merged), first
+        and last frame, n_invalid_rows (negative or reversed frames, e.g.
+        test annotations) and source ('official' or 'custom' if LMT-EYE can
+        rebuild it, otherwise 'other', e.g. manual annotations).
+        To count or time events, use get_event_summary."""
+        _mark_used(ctx)
+        from mcp_server import lmt_queries
+
         path = _resolve_database(database_path)
         connection = _connect_read_only(path)
         try:
-            return _rows_as_dicts(
-                connection,
-                "SELECT NAME AS name, COUNT(*) AS count "
-                "FROM EVENT GROUP BY NAME ORDER BY NAME",
+            fps = lmt_queries.measured_fps(
+                lmt_queries.frame_bounds(connection)
             )
+            rows = lmt_queries.event_types(connection, fps)
         except sqlite3.Error as e:
-            raise ToolError(f"Cannot read EVENT table: {e}")
+            raise _sqlite_error(e, "the EVENT table")
+        except ValueError as e:
+            raise ToolError(str(e))
         finally:
             connection.close()
+        return {
+            "event_types": rows,
+        }
+
+    @server.tool()
+    def get_event_summary(
+        event_names: list[str],
+        ctx: Context,
+        group_by: Literal["animal", "pair", "cage"] = "animal",
+        directional: bool = False,
+        animal_ids: list[int] | None = None,
+        start: str | int | None = None,
+        end: str | int | None = None,
+        min_duration_frames: int = 1,
+        utc_offset: float = 0.0,
+        fps: int | None = None,
+        database_path: str | None = None,
+    ) -> dict[str, Any]:
+        """Count and time behavioural events over a time window, with the
+        same rules as LMT-EYE reports.
+
+        group_by:
+        - 'animal' (default): one row per animal. An animal's events are
+          all EVENT rows where it is IDANIMALA, partners merged (as in the
+          reports).
+        - 'pair': one row per pair of animals, for events with a partner
+          (IDANIMALB). A->B and B->A rows are merged into one timeline for
+          the pair, unless directional=True (use it for oriented events
+          such as 'Approach', 'Follow' or 'Social approach').
+        - 'cage': one row: time during which the event happens for at least
+          one animal.
+
+        Rules: overlapping or touching rows form one event; events crossing
+        the window limits are cut at the limits; events shorter than
+        min_duration_frames are then dropped (same as 'event_min_duration'
+        in an analysis settings.json; the app's 'Remove event <= N frames'
+        field corresponds to N + 1). Each event is counted once over the
+        window, unlike sums of report bins.
+
+        animal_ids: restrict to these animal IDs (pairs: pairs including at
+        least one of them). start / end: frame number or
+        'YYYY-MM-DD HH:MM:SS' in local time (UTC + utc_offset hours);
+        default is the whole experiment. fps: default is the measured frame
+        rate, rounded.
+
+        Returns the window used, the parameters, one row per event and group
+        (count, total, mean, median and max duration in seconds,
+        percent_of_window, events_per_hour) and notes."""
+        _mark_used(ctx)
+        from mcp_server import lmt_queries
+
+        names = list(dict.fromkeys(n for n in event_names if n))
+        if not names:
+            raise ToolError("Give at least one event name.")
+        if len(names) > MAX_EVENTS_PER_CALL:
+            raise ToolError(
+                f"At most {MAX_EVENTS_PER_CALL} events per call "
+                f"({len(names)} given)."
+            )
+        if min_duration_frames < 1:
+            raise ToolError("min_duration_frames must be at least 1.")
+        if fps is not None and fps < 1:
+            raise ToolError("fps must be at least 1.")
+
+        path = _resolve_database(database_path)
+        connection = _connect_read_only(path)
+        try:
+            animal_table = lmt_queries.animals(connection)
+            if animal_ids:
+                unknown = sorted(set(animal_ids) - set(animal_table))
+                if unknown:
+                    raise ToolError(
+                        f"Unknown animal IDs: {unknown}. Known IDs: "
+                        f"{sorted(animal_table)}."
+                    )
+
+            if fps is None:
+                bounds = lmt_queries.frame_bounds(connection)
+                fps = max(1, round(lmt_queries.measured_fps(bounds)))
+
+            try:
+                window, window_info = lmt_queries.resolve_window(
+                    connection, start, end, fps, utc_offset
+                )
+            except ValueError as e:
+                raise ToolError(str(e))
+
+            rows: list[dict[str, Any]] = []
+            notes: list[str] = []
+            for name in names:
+                event_rows = lmt_queries.load_event_rows(
+                    connection, name, window
+                )
+                if not event_rows and not lmt_queries.event_exists(
+                    connection, name
+                ):
+                    close = lmt_queries.close_event_names(connection, name)
+                    hint = f" Did you mean: {close}?" if close else ""
+                    notes.append(
+                        f"No '{name}' event in this database (names are "
+                        f"case-sensitive).{hint} See list_event_types."
+                    )
+                    continue
+                event_result, event_notes = lmt_queries.summarize_event(
+                    event_rows,
+                    name,
+                    group_by,
+                    directional,
+                    animal_table,
+                    animal_ids,
+                    window,
+                    fps,
+                    min_duration_frames,
+                )
+                rows.extend(event_result)
+                notes.extend(event_notes)
+        except sqlite3.Error as e:
+            raise _sqlite_error(e, "the database")
+        finally:
+            connection.close()
+
+        return {
+            "database_path": str(path),
+            "window": window_info,
+            "params": {
+                "group_by": group_by,
+                "directional": directional,
+                "animal_ids": animal_ids,
+                "min_duration_frames": min_duration_frames,
+                "fps": fps,
+            },
+            "rows": rows,
+            "notes": notes,
+        }
+
+    @server.tool()
+    def query_database(
+        sql: str,
+        ctx: Context,
+        params: list[Any] | None = None,
+        database_path: str | None = None,
+    ) -> dict[str, Any]:
+        """Run one read-only SQL query (SQLite) on an LMT database and return
+        all its rows: columns, rows (lists of values) and n_rows.
+
+        The database cannot be modified: it is opened read-only and every
+        operation other than reading is refused (INSERT, UPDATE, DELETE,
+        CREATE, DROP, ATTACH, PRAGMA that set a value). PRAGMA table_info,
+        index_list and similar descriptive PRAGMA are allowed. Use '?' in
+        the SQL and pass the values in 'params'.
+
+        Main tables: ANIMAL (ID, RFID, NAME, GENOTYPE...), FRAME (FRAMENUMBER,
+        TIMESTAMP in ms UTC, sensors when present), DETECTION (FRAMENUMBER,
+        ANIMALID, MASS_X/Y/Z, FRONT_*, BACK_* in pixels, REARING,
+        LOOK_UP, LOOK_DOWN), EVENT (NAME, STARTFRAME, ENDFRAME, IDANIMALA..D,
+        METADATA), LOG (rebuild history).
+
+        There is no row limit: DETECTION holds one row per animal per frame
+        (millions of rows over days), so filter, aggregate or use LIMIT.
+        To count or time events with the report rules, prefer
+        get_event_summary."""
+        _mark_used(ctx)
+        from mcp_server import lmt_queries
+
+        if not sql or not sql.strip():
+            raise ToolError("Give an SQL query.")
+        path = _resolve_database(database_path)
+        connection = _connect_read_only(path)
+        try:
+            result = lmt_queries.run_read_only_query(connection, sql, params)
+        except sqlite3.Error as e:
+            message = str(e)
+            if (
+                "not authorized" in message
+                or "authorization denied" in message
+                or "prohibited" in message
+                or "readonly" in message
+            ):
+                raise ToolError(
+                    f"Refused: query_database can only read ({message})."
+                )
+            if "locked" in message.lower():
+                raise _sqlite_error(e, "the database")
+            raise ToolError(f"SQL error: {message}")
+        finally:
+            connection.close()
+        return {"database_path": str(path), **result}
 
     return server

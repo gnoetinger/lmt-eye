@@ -2,7 +2,7 @@
 @author: xavier mousset, guillaume noetinger, fabrice de chaumont
 """
 
-print("\n === LMT-EYE === \n")
+print("\n === LMT-EYE-MCP === \n")
 from pathlib import Path
 
 # ================ APP INFO ================

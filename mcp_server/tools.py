@@ -27,7 +27,7 @@ INSTRUCTIONS = (
     "10/57 cm per pixel for mice and 20/57 for rats. The y axis points down (camera view).\n"
     "- Frames are usually at 30 frames/s (see get_database_info). Time 0 "
     "is the first frame of the FRAME table.\n"
-    "- MASS_Z is a relative height of the animal from the ground in millimeters."
+    "- MASS_Z is a relative height of the animal from the ground in millimeters.\n"
     "low on the floor, higher on raised objects such as a house roof. "
     "Check the levels in each setup.\n"
     "- Pairwise events (e.g. 'Oral-oral Contact', 'Contact') are stored "
@@ -50,13 +50,12 @@ INSTRUCTIONS = (
     
     "Analysis:\n"
     "- The events can be analyzed in term of number, duration and frequency\n"
-    "- for the distance between animals, use the mass center X and Y"
-    "- for the sake of reproducibility, generate python codes"
-    "- it is not parameters but variables"
-    "- stats: mice of a same experiment are not independent"
-    
-    "Color conventions:\n"
-    "- animal A is red, B:green, C:purple D:orange\n"
+    "- for the distance between animals, use the mass center X and Y\n"
+    "- for the sake of reproducibility, generate python codes\n"
+    "- it is not parameters but variables\n"
+    "- stats: mice of a same experiment are not independent, the experiment is the statistical unit\n"
+        
+    "- Animals are labelled A, B, C, D in the order of the ANIMAL table (sorted by ID). Colors: A is red, B green, C purple, D orange."
         
 )
 

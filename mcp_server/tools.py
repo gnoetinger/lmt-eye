@@ -6,7 +6,8 @@ analysis may be writing to the same database at the same time.
 
 The queries themselves live in ``mcp_server/lmt_queries.py``; this file
 only declares the tools and checks their arguments. The user prompts that
-the AI passes to ``record_user_prompt`` are written to
+the AI passes to ``record_user_prompt`` are written, only once another
+tool is used to answer them, to
 ``mcp_server/logs/user_prompts.log`` (see ``query_log.py``).
 """
 
@@ -27,10 +28,14 @@ INSTRUCTIONS = (
     "Access to Live Mouse Tracker (LMT) experiments opened in LMT-EYE. "
     "Without 'database_path', tools use the database currently loaded in "
     "LMT-EYE. No tool modifies the databases.\n"
-    "Prompt log: before using LMT-EYE tools to answer a user message, call "
-    "record_user_prompt once with that message copied word for word (no "
-    "summary, no translation). Do not call it again for the other tool calls "
-    "answering the same message.\n"
+    "Prompt log: only when you use LMT-EYE tools to answer a user message, "
+    "call record_user_prompt once with that message copied word for word (no "
+    "summary, no translation), together with or just before your first "
+    "other LMT-EYE tool call. Never call it for a message you answer without "
+    "LMT-EYE tools, and do not call it again for the other tool calls "
+    "answering the same message. Also fill its provider, model and effort "
+    "arguments when you know them (e.g. 'Anthropic', your exact model id, "
+    "your reasoning effort); leave out what you do not know, never guess.\n"
     "LMT database conventions:\n"
     "- Positions (MASS_X/Y, FRONT_*, BACK_*) are in pixels. Convert with "
     "10/57 cm per pixel for mice and 20/57 for rats. The y axis points down (camera view).\n"
@@ -123,37 +128,64 @@ def build_server(app_version: str = "") -> MCPServer:
 
     query_log.setup()
 
+    def _mark_used(ctx: Context) -> None:
+        """Tell the prompt log that LMT-EYE is used to answer: the pending
+        user prompt of this conversation is written now."""
+        try:
+            request_context = ctx.request_context
+        except Exception:
+            request_context = None
+        query_log.tool_used(request_context)
+
     @server.tool()
-    def record_user_prompt(prompt: str, ctx: Context) -> dict[str, Any]:
+    def record_user_prompt(
+        prompt: str,
+        ctx: Context,
+        provider: str | None = None,
+        model: str | None = None,
+        effort: str | None = None,
+    ) -> dict[str, Any]:
         """Record the user's message in LMT-EYE's local prompt log.
 
-        Call it once per user message, before the other LMT-EYE tools, with
-        the user's message copied word for word: no summary, no
-        translation, no added context. Do not call it again for the other
-        tool calls that answer the same message. It returns
-        {"recorded": true} or the reason it was not recorded; either way,
-        go on answering the user."""
+        Call it only when you use other LMT-EYE tools to answer the
+        message, once, with or just before the first of them. Never call it
+        for a message answered without LMT-EYE tools. Copy the user's
+        message word for word: no summary, no translation, no added context.
+        The message is written to the log when another LMT-EYE tool is
+        called. It returns {"recorded": ...} or {"pending": true} with a
+        reason; either way, go on answering the user.
+
+        Optional, self-declared (written as given, not verified by
+        LMT-EYE): provider (e.g. 'Anthropic', 'OpenAI'), model (your exact
+        model id) and effort (your reasoning effort level, e.g. 'low',
+        'medium', 'high'). Give only what you know; omit the rest rather
+        than guess."""
         if not prompt or not prompt.strip():
             raise ToolError("Give the user's message in 'prompt'.")
         try:
             request_context = ctx.request_context
         except Exception:
             request_context = None
-        return query_log.record_prompt(prompt, request_context)
+        ai = {"provider": provider, "model": model, "effort": effort}
+        return query_log.record_prompt(prompt, request_context, ai)
 
     @server.tool()
-    def get_loaded_database() -> dict[str, Any]:
+    def get_loaded_database(ctx: Context) -> dict[str, Any]:
         """Return the path of the LMT database currently loaded in LMT-EYE,
         or null if none is loaded."""
+        _mark_used(ctx)
         path = app_state.database_path
         return {"database_path": str(path) if path is not None else None}
 
     @server.tool()
-    def get_database_info(database_path: str | None = None) -> dict[str, Any]:
+    def get_database_info(
+        ctx: Context, database_path: str | None = None
+    ) -> dict[str, Any]:
         """Summary of an LMT experiment: number of animals, start and end
         (UTC), duration, frame rate, first and last frame, tables, sensors
         available in the FRAME table, and the default LMT-EYE analysis
         folder ('<database> - analysis') if it exists."""
+        _mark_used(ctx)
         # imported here: only needed when the tool is called
         from mcp_server import lmt_queries
 
@@ -169,9 +201,12 @@ def build_server(app_version: str = "") -> MCPServer:
             connection.close()
 
     @server.tool()
-    def list_animals(database_path: str | None = None) -> dict[str, Any]:
+    def list_animals(
+        ctx: Context, database_path: str | None = None
+    ) -> dict[str, Any]:
         """List the animals of an LMT experiment (content of the ANIMAL
         table: ID, RFID, name, genotype, ...)."""
+        _mark_used(ctx)
         path = _resolve_database(database_path)
         connection = _connect_read_only(path)
         try:
@@ -186,6 +221,7 @@ def build_server(app_version: str = "") -> MCPServer:
 
     @server.tool()
     def list_event_types(
+        ctx: Context,
         database_path: str | None = None,
     ) -> dict[str, Any]:
         """List the behavioural event types present in an LMT database.
@@ -199,6 +235,7 @@ def build_server(app_version: str = "") -> MCPServer:
         test annotations) and source ('official' or 'custom' if LMT-EYE can
         rebuild it, otherwise 'other', e.g. manual annotations).
         To count or time events, use get_event_summary."""
+        _mark_used(ctx)
         from mcp_server import lmt_queries
 
         path = _resolve_database(database_path)
@@ -221,6 +258,7 @@ def build_server(app_version: str = "") -> MCPServer:
     @server.tool()
     def get_event_summary(
         event_names: list[str],
+        ctx: Context,
         group_by: Literal["animal", "pair", "cage"] = "animal",
         directional: bool = False,
         animal_ids: list[int] | None = None,
@@ -261,6 +299,7 @@ def build_server(app_version: str = "") -> MCPServer:
         Returns the window used, the parameters, one row per event and group
         (count, total, mean, median and max duration in seconds,
         percent_of_window, events_per_hour) and notes."""
+        _mark_used(ctx)
         from mcp_server import lmt_queries
 
         names = list(dict.fromkeys(n for n in event_names if n))
@@ -350,6 +389,7 @@ def build_server(app_version: str = "") -> MCPServer:
     @server.tool()
     def query_database(
         sql: str,
+        ctx: Context,
         params: list[Any] | None = None,
         database_path: str | None = None,
     ) -> dict[str, Any]:
@@ -372,6 +412,7 @@ def build_server(app_version: str = "") -> MCPServer:
         (millions of rows over days), so filter, aggregate or use LIMIT.
         To count or time events with the report rules, prefer
         get_event_summary."""
+        _mark_used(ctx)
         from mcp_server import lmt_queries
 
         if not sql or not sql.strip():

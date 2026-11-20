@@ -17,12 +17,22 @@ def register_prompts(server: MCPServer) -> None:
         title="Ecological impact",
         description="Provide an estimation of the ecological impact of your requests.",
     )
-    def ecological_impact( ) -> str:
+    def ecological_impact( arg: str = "" ) -> str:
         return (
             "Using the current conversation with the user, "
             "estimate the impact in kWh of the usage, and the volume of water consumption. "
             "Display the difference between the energy used on the server side, and on the user's computer. "
             "Provide good practices to save energy."
+        )
+        
+    @server.prompt(
+    name="integrated_instructions_list",
+    title="Integrated instructions",
+    description="Provide the instructions loaded by default with LMT-MCP.",
+    )
+    def integrated_instructions_list( arg: str = "" ) -> str:
+        return (
+            "Display the instructions of this MCP to the user."            
         )
 
     # Add other prompts here, each with a distinct name:

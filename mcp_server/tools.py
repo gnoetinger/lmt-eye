@@ -19,28 +19,38 @@ MAX_ROWS = 500
 # Sent to the client when it connects; the model reads it at the start of
 # every session. Keep it short: details belong in tool descriptions.
 INSTRUCTIONS = (
-    "Access to Live Mouse Tracker (LMT) experiments opened in LMT-EYE.\n "
-    "Without 'database_path', tools use the database currently loaded in.\n"    
+    "Access to Live Mouse Tracker (LMT) experiments opened in LMT-EYE.\n"
+    "Without 'database_path', tools use the database currently loaded in LMT-EYE.\n"    
     
     "LMT database conventions:\n"
+    
     "- Positions (MASS_X/Y, FRONT_*, BACK_*) are in pixels. Convert with "
     "10/57 cm per pixel for mice and 20/57 for rats. The y axis points down (camera view).\n"
+    
     "- Frames are usually at 30 frames/s (see get_database_info). Time 0 "
     "is the first frame of the FRAME table.\n"
-    "- MASS_Z is a relative height of the animal from the ground in millimeters.\n"
+    
+    "- MASS_Z is a relative height of the animal from the ground in millimeters:"
     "low on the floor, higher on raised objects such as a house roof. "
+    
     "Check the levels in each setup.\n"
     "- Pairwise events (e.g. 'Oral-oral Contact', 'Contact') are stored "
     "once per animal of the pair (A->B and B->A). Merge them before "
     "counting contacts between two animals.\n"
+    
     "- A centre-of-mass step longer than 85.5 px between two consecutive "
     "frames is a tracking error. Exclude it from distances.\n"
+    
     "- Even when an animal is stopped, the tracking may still move a little around the animal, which provides overestimated distances.\n"
+    
     "- Identity switches can happen when two mice are close: the tracked "
     "position jumps by several cm in one frame. Check for them before "
-    "trusting a rare event.\n"    
+    "trusting a rare event.\n"
+        
     "- for data analysis report, prefer a webpage using plotly for figures\n"
+    
     "- if events are missing in the database, the rebuild all events function compute them. The table LOG displays in each row the last time the event has been computed, and for which time range (in frame).\n"
+    
     "- in the table events, the IDANIMAL* represents the animals in the order of the event description: (e.g Oral-genital Contact means contact of the oral part of IDANIMALA with genital of IDANIMALB)."
     "One exception for nest3*: the idanimalA is the one that is not in the nest. Nest3 only work if 4 animals are in the database\n"
     
@@ -162,7 +172,18 @@ def build_server(app_version: str = "") -> MCPServer:
             raise ToolError(f"Cannot read EVENT table: {e}")
         finally:
             connection.close()
-
+            
+    '''
+    @server.tool()
+    def rebuild_all_events(
+        database_path: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Rebuild / computes all the events of a database."""
+        path = _resolve_database(database_path)
+        connection = _connect_read_only(path)
+        # add rebuild connection here
+    '''
+            
     from mcp_server.prompts import register_prompts
 
     register_prompts(server)

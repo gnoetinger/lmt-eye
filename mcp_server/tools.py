@@ -186,4 +186,8 @@ def build_server(app_version: str = "") -> MCPServer:
         finally:
             connection.close()
 
+    from mcp_server.prompts import register_prompts
+
+    register_prompts(server)
+
     return server

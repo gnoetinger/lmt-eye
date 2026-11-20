@@ -10,7 +10,7 @@ from pathlib import Path
 # pyinstaller --onefile --icon=res/lmt_eye_icon.png --add-data "res/lmt_eye_icon.png;res" --add-data "res/template;res/template" --add-data "res/assets;res/assets" --add-data "res/mouse_run.gif;res" --add-data "events/custom;events/custom" lmt_eye.py
 
 APP_VERSION = "3.0"
-APP_RELEASE = "2026-11-13"
+APP_RELEASE = "2026-11-20"
 
 APP_PATH = Path(__file__).parent
 ICON_PATH = APP_PATH / "res" / "lmt_eye_icon.png"

@@ -12,6 +12,7 @@ dist/
 # ignore test files
 test*.ipynb
 test*.py
+!tests/test_analyses_comparator.py
 
 # ignore app folders
 app_*/

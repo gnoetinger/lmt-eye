@@ -1,0 +1,19 @@
+{
+  "id": "lmt.animal_bouts",
+  "version": "1.0.0",
+  "question": "How many bouts of a named event touch this window for one focal animal, and how many frames do they occupy?",
+  "sha256": "4c14dd3f25a72acea5caf107a01cbb143259e4ea7b8aca6ef7cb07fe3642a57c",
+  "author": "dhuzard",
+  "license": null,
+  "required_columns": {"EVENT": ["NAME", "IDANIMALA", "STARTFRAME", "ENDFRAME"]},
+  "variables": {"event": "exact event name", "animal_id": "focal IDANIMALA", "start": "first frame, inclusive", "end": "last frame, inclusive"},
+  "outputs": {"bout_count": "bouts touching the window", "occupied_frames": "frames"},
+  "definition": "Clip matching rows to the window, then merge overlapping or adjacent intervals across all partners. A bout touching two separately queried windows can appear in both.",
+  "suggested_prompt": "Find the single-animal bout method and show its definition, inputs and validation example before using it.",
+  "validation": {
+    "schema_sql": "CREATE TABLE EVENT (NAME TEXT, IDANIMALA INTEGER, STARTFRAME INTEGER, ENDFRAME INTEGER)",
+    "rows": [["Stop",1,3,6],["Stop",1,5,7],["Stop",1,8,8],["Stop",1,12,16],["Stop",2,9,11],["Move",1,9,11]],
+    "arguments": {"event": "Stop", "animal_id": 1, "start": 5, "end": 13},
+    "expected": {"bout_count": 2, "occupied_frames": 6}
+  }
+}

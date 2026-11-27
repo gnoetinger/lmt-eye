@@ -184,8 +184,10 @@ def build_server(app_version: str = "") -> MCPServer:
         # add rebuild connection here
     '''
             
+    from mcp_server.method_catalog import register_catalog
     from mcp_server.prompts import register_prompts
 
+    register_catalog(server)
     register_prompts(server)
 
     return server

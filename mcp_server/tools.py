@@ -188,4 +188,7 @@ def build_server(app_version: str = "") -> MCPServer:
 
     register_prompts(server)
 
+    from mcp_server.event_summary_tool import register_event_summary
+
+    register_event_summary(server)
     return server

@@ -37,15 +37,21 @@ class AnalysesComparator:
         self,
         table_name: str,
         suffix: str = "_complete_table_Download_data.xlsx",
+        *,
+        animals_by_folder: dict[Path, pd.DataFrame] | None = None,
     ) -> pd.DataFrame:
-        """Concatenate a list of DataFrames into a single DataFrame."""
+        """Attach each recording's animal metadata before combining its rows."""
         dfs: list[pd.DataFrame] = []
         for path in self.settings.analyses_path:
-            dfs.append(
-                pd.read_excel(
-                    path / (table_name + suffix), dtype={"RFID": str}
-                )
-            )
+            workbook = path / (table_name + suffix)
+            table = pd.read_excel(workbook, dtype={"RFID": str})
+            if animals_by_folder is not None:
+                animals = animals_by_folder[path]
+                tags = table["RFID"]
+                if (tags.isna() | ~tags.isin(animals["RFID"])).any():
+                    raise ValueError(f"Missing animal metadata for RFID in {workbook}")
+                table = animals.merge(table, on="RFID", validate="one_to_many")
+            dfs.append(table)
         return pd.concat(dfs, ignore_index=True)
 
     def compare_analyses(
@@ -73,17 +79,17 @@ class AnalysesComparator:
         # ANIMAL INFO
         # ----------------
 
-        animal_df = self.concatenate_dfs("main")
+        animals_by_folder = {
+            path: pd.read_excel(path / self.settings.MAIN_TABLE, dtype={"RFID": str})
+            for path in self.settings.analyses_path
+        }
+        animal_df = pd.concat(animals_by_folder.values(), ignore_index=True)
         self.update_progression(*progression)
 
         # ACTIVITY
         # ----------------
 
-        activity_df = pd.merge(
-            animal_df,
-            self.concatenate_dfs("Activity"),
-            on="RFID",
-        )
+        activity_df = self.concatenate_dfs("Activity", animals_by_folder=animals_by_folder)
         progression[0] += 1
         self.update_progression(*progression)
 
@@ -98,23 +104,18 @@ class AnalysesComparator:
         # EVENTS
         # ----------------
         all_event_df = None
-        for event_table_name in self.get_common_events():
+        for event_table_name in events:
 
-            event_df = pd.merge(
-                animal_df,
-                self.concatenate_dfs(event_table_name),
-                on="RFID",
+            event_df = self.concatenate_dfs(
+                event_table_name, animals_by_folder=animals_by_folder
             )
-            hist_df = pd.merge(
-                animal_df,
-                self.concatenate_dfs(
-                    event_table_name,
-                    suffix=(
-                        "_Histogram_of_event_count_over_their_duration"
-                        "_Download_data.xlsx"
-                    ),
+            hist_df = self.concatenate_dfs(
+                event_table_name,
+                suffix=(
+                    "_Histogram_of_event_count_over_their_duration"
+                    "_Download_data.xlsx"
                 ),
-                on="RFID",
+                animals_by_folder=animals_by_folder,
             )
             event.generic_reports(
                 repo_manager,

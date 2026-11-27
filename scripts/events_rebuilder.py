@@ -3,11 +3,9 @@
 @author: xmousset
 """
 
-import sys
-import os
 import logging
 import traceback
-import subprocess
+from contextlib import contextmanager
 from types import ModuleType
 from sqlite3 import Connection
 from typing import Callable, Literal
@@ -29,6 +27,28 @@ from lmtanalysis.EventTimeLineCache import (
 )
 
 from psutil import virtual_memory
+
+
+@contextmanager
+def _rebuild_transaction(connection: Connection):
+    """Publish all builder commits together using SQLite's rollback journal or WAL."""
+    if connection.in_transaction:
+        raise ValueError("Finish the current transaction before rebuilding events.")
+    mode = connection.autocommit
+    # In this mode Python-level commit() calls in existing builders are no-ops.
+    # Explicit SQL owns the transaction across the flush and all processing windows.
+    connection.autocommit = True
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        try:
+            yield
+            connection.execute("COMMIT")
+        except BaseException:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+    finally:
+        connection.autocommit = mode
 
 
 class EventsRebuilder:
@@ -212,46 +232,36 @@ class EventsRebuilder:
 
         self.check_memory()
 
-        # update missing fields
         try:
-            cursor = self.conn.cursor()
-            query = "ALTER TABLE EVENT ADD METADATA TEXT"
-            cursor.execute(query)
-            self.conn.commit()
-        except:
-            logging.warning("METADATA field already exists")
+            with _rebuild_transaction(self.conn):
+                columns = self.conn.execute("PRAGMA table_info(EVENT)")
+                if "metadata" not in {row[1].lower() for row in columns}:
+                    self.conn.execute("ALTER TABLE EVENT ADD METADATA TEXT")
+                BuildDataBaseIndex.buildDataBaseIndex(self.conn, force=False)
 
-        BuildDataBaseIndex.buildDataBaseIndex(self.conn, force=False)
+                chrono = Chronometer("Flushing events")
+                for module in modules:
+                    module.flush(self.conn)
+                logging.info(f"Flushing time: {chrono.getTimeInS():.2f} s")
 
-        try:
-            chrono = Chronometer("Flushing events")
-            for module in modules:
-                module.flush(self.conn)
-            logging.info(f"Flushing time: {chrono.getTimeInS():.2f} s")
-
-            processing_windows = self.binner.get_bin_iterator()
-            nb_windows = len(processing_windows)
-            for i, window in enumerate(processing_windows):
-                self._rebuild_window(
-                    modules,
-                    window,
-                    progress_callback,
-                    window_progress=(i, nb_windows),
-                )
-
-        except:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            lines = traceback.format_exception(
-                exc_type, exc_value, exc_traceback
-            )
-            error = "".join("!! " + line for line in lines)
-
-            t = TaskLogger(self.conn)
-            t.addLog(error)
+                processing_windows = self.binner.get_bin_iterator()
+                nb_windows = len(processing_windows)
+                for i, window in enumerate(processing_windows):
+                    self._rebuild_window(
+                        modules,
+                        window,
+                        progress_callback,
+                        window_progress=(i, nb_windows),
+                    )
+        except BaseException:
             flushEventTimeLineCache()
-
-            print(error, file=sys.stderr)
-            raise Exception()
+            logging.exception("Event rebuild failed")
+            if not self.conn.in_transaction:
+                try:
+                    TaskLogger(self.conn).addLog(traceback.format_exc())
+                except Exception:
+                    logging.exception("Could not record rebuild failure in LOG")
+            raise
 
         self.update_progression(1, 1, progress_callback)
         logging.info("*** REBUILD FINISHED ***")

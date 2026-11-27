@@ -123,23 +123,17 @@ def build_server(app_version: str = "") -> MCPServer:
     @server.tool()
     def get_database_info(database_path: str | None = None) -> dict[str, Any]:
         """Summary of an LMT experiment: number of animals, start and end
-        (UTC), duration and frame rate."""
-        # imported here: heavy module, only needed when the tool is called
-        from scripts.db_analyzer import DatabaseAnalyzer
+        (UTC), duration and measured frame rate (null if indeterminate)."""
+        from mcp_server.lmt_queries import database_info
 
         path = _resolve_database(database_path)
-        infos = DatabaseAnalyzer.get_informations(path)
-        return {
-            "database_path": str(path),
-            "database_name": infos["database_name"],
-            "n_animals": int(infos["n_animals"]),
-            "start_time_utc": infos["start_time"].isoformat(),
-            "end_time_utc": infos["end_time"].isoformat(),
-            "duration_hours": round(
-                infos["duration"].total_seconds() / 3600, 2
-            ),
-            "fps": round(float(infos["fps"]), 2),
-        }
+        connection = _connect_read_only(path)
+        try:
+            return database_info(connection, path)
+        except (sqlite3.Error, ValueError) as e:
+            raise ToolError(f"Cannot inspect the recording: {e}") from e
+        finally:
+            connection.close()
 
     @server.tool()
     def list_animals(database_path: str | None = None) -> list[dict[str, Any]]:

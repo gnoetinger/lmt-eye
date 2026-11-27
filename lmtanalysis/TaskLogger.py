@@ -103,10 +103,10 @@ class TaskLogger:
             date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         cursor = self.conn.cursor()
-        query = "INSERT INTO LOG( process,version,date,tmin,tmax) VALUES ( '{process}','{version}','{date}','{tmin}','{tmax}' );".format( process=process, version=version, date=date, tmin=tmin, tmax=tmax )
+        query = "INSERT INTO LOG(process, version, date, tmin, tmax) VALUES (?, ?, ?, ?, ?)"
                     
         logging.debug( query )
-        cursor.execute( query )
+        cursor.execute(query, (process, version, str(date), tmin, tmax))
         self.conn.commit()
         cursor.close()    
         

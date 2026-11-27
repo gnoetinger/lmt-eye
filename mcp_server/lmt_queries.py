@@ -62,14 +62,13 @@ def frame_bounds(connection: sqlite3.Connection) -> dict[str, int]:
     }
 
 
-def measured_fps(bounds: dict[str, int]) -> float:
+def measured_fps(bounds: dict[str, int]) -> float | None:
     """Frame rate measured between the first and last frame."""
     duration_ms = bounds["last_timestamp"] - bounds["first_timestamp"]
-    if duration_ms <= 0:
-        return 30.0
-    return (bounds["last_frame"] - bounds["first_frame"]) / (
-        duration_ms / 1000
-    )
+    frames = bounds["last_frame"] - bounds["first_frame"]
+    if duration_ms <= 0 or frames <= 0:
+        return None
+    return frames / (duration_ms / 1000)
 
 
 def database_info(connection: sqlite3.Connection, path: Path) -> dict:
@@ -91,8 +90,13 @@ def database_info(connection: sqlite3.Connection, path: Path) -> dict:
         for row in connection.execute("PRAGMA table_info(FRAME)")
     }
 
+    if bounds["first_timestamp"] is None or bounds["last_timestamp"] is None:
+        raise ValueError("Missing timestamp at the start or end of the FRAME table.")
     start = pd.to_datetime(bounds["first_timestamp"], unit="ms")
     end = pd.to_datetime(bounds["last_timestamp"], unit="ms")
+    if end < start:
+        raise ValueError("The final FRAME timestamp precedes the first.")
+    fps = measured_fps(bounds)
     analysis_folder = path.parent / f"{path.stem} - analysis"
 
     return {
@@ -102,7 +106,7 @@ def database_info(connection: sqlite3.Connection, path: Path) -> dict:
         "start_time_utc": start.isoformat(),
         "end_time_utc": end.isoformat(),
         "duration_hours": round((end - start).total_seconds() / 3600, 2),
-        "fps": round(measured_fps(bounds), 2),
+        "fps": round(fps, 2) if fps is not None else None,
         "first_frame": bounds["first_frame"],
         "last_frame": bounds["last_frame"],
         "tables": tables,
